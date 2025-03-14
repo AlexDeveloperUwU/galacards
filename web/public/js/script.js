@@ -21,7 +21,7 @@ async function fetchImages() {
     preloadImages(imageList);
     reels.forEach((reel, index) => {
       reel.innerHTML = `<div class="number">${index + 1}</div>`;
-      names[index].textContent = `Imagen ${index + 1}`;
+      names[index].textContent = `VTuber ${index + 1}`;
     });
   } catch (error) {
     console.error("Failed to fetch images:", error);
@@ -197,7 +197,7 @@ function resetGame() {
     reel.innerHTML = `<div class="number">${index + 1}</div>`;
   });
   document.querySelectorAll(".image-name").forEach((name, index) => {
-    name.textContent = `Imagen ${index + 1}`;
+    name.textContent = `VTuber ${index + 1}`;
     name.classList.remove("revealed");
   });
   const messageElement = document.getElementById("message");
