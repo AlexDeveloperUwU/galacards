@@ -55,6 +55,9 @@ function shuffleArray(array) {
   return array;
 }
 
+const audio = new Audio("/public/sounds/wheel.wav");
+audio.loop = true;
+
 function spinReel(reelElement, finalImage, nameElement, initialImage) {
   return new Promise((resolve) => {
     const shuffledImages = shuffleArray([...imageList]);
@@ -72,8 +75,7 @@ function spinReel(reelElement, finalImage, nameElement, initialImage) {
     const totalHeight = totalImages * imageHeight;
     const finalPosition = (totalImages - 1) * imageHeight;
 
-    const audio = new Audio("/public/sounds/wheel.wav");
-    audio.loop = true;
+    audio.volume = 1.0; // Ajustar el volumen antes de cada giro
     audio.play();
 
     function animateReel() {
@@ -89,8 +91,7 @@ function spinReel(reelElement, finalImage, nameElement, initialImage) {
         strip.style.transform = `translateY(-${finalPosition}px)`;
         setTimeout(() => {
           strip.style.transition = "none";
-          reelElement.innerHTML = "";
-          reelElement.appendChild(createImageElement(finalImage));
+          strip.style.transform = `translateY(-${finalPosition}px)`;
           nameElement.textContent = finalImage.split(".")[0];
           nameElement.classList.add("revealed");
           audio.volume = 0.1;
