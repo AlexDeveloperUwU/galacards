@@ -170,6 +170,14 @@ async function spin() {
     name.textContent = selectedImages[index].split(".")[0];
   });
 
+  await fetch("/djs", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ selectedImages }),
+  });
+
   const spinPromises = reels.map((reel, index) => {
     const initialImage = previousImages[index] || getRandomImage(imageList);
     return spinReel(reel, selectedImages[index], names[index], initialImage);

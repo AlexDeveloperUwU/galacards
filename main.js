@@ -9,6 +9,8 @@ const port = 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+app.use(express.json());
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "web", "index.html"));
 });
@@ -18,7 +20,9 @@ app.get("/sw.js", (req, res) => {
 });
 
 app.post("/djs", (req, res) => {
-  res.json({ message: "Hola desde la API!" });
+  const { selectedImages } = req.body;
+  console.log(selectedImages);
+  res.status(200).send("Images received");
 });
 
 app.get("/images", (req, res) => {
@@ -29,9 +33,7 @@ app.get("/images", (req, res) => {
       return res.status(500).json({ error: "Failed to read images" });
     }
 
-    const images = files.filter(
-      (file) => file !== "favicon.png" && file !== "LOGO.avif"
-    );
+    const images = files.filter((file) => file !== "favicon.png" && file !== "LOGO.avif");
     res.json(images);
   });
 });
