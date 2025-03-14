@@ -1,0 +1,11 @@
+{
+  "name": "galacards",
+  "version": "1.0.0",
+  "main": "main.js",
+  "type": "module",
+  "author": "AlexDeveloperUwU",
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "express": "^4.21.2"
+  }
+}
