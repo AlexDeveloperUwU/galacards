@@ -170,13 +170,13 @@ async function spin() {
     name.textContent = selectedImages[index].split(".")[0];
   });
 
-  await fetch("/djs", {
+  fetch("/djs", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ selectedImages }),
-  });
+  }).catch((error) => console.error("Error posting selected images:", error));
 
   const spinPromises = reels.map((reel, index) => {
     const initialImage = previousImages[index] || getRandomImage(imageList);
