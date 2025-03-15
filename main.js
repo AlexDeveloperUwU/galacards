@@ -69,8 +69,7 @@ app.post("/djs", async (req, res) => {
 
   try {
     const messagePromises = [];
-    for (const player of players) {
-      const otherPlayers = players.filter((p) => p !== player);
+    const resizedImagesPromises = players.map(async (player) => {
       const otherImages = images.filter((_, index) => players[index] !== player);
 
       const resizedImages = await Promise.all(
@@ -93,6 +92,12 @@ app.post("/djs", async (req, res) => {
         throw new Error("Failed to resize all images");
       }
 
+      return { player, validResizedImages };
+    });
+
+    const resizedImagesResults = await Promise.all(resizedImagesPromises);
+
+    for (const { player, validResizedImages } of resizedImagesResults) {
       const sanitizedPlayerName = player.name.replace(/\s+/g, "_");
       const combinedImagePath = path.join(tempDir, `combined_${sanitizedPlayerName}.png`);
 
@@ -112,6 +117,7 @@ app.post("/djs", async (req, res) => {
 
       const imageUrl = response.url;
 
+      const otherPlayers = players.filter((p) => p !== player);
       const embedDescription = otherPlayers
         .map((otherPlayer) => `**${otherPlayer.name}** debe adivinar a **${path.parse(otherPlayer.image).name}**`)
         .join("\n\n");
