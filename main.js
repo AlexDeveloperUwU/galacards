@@ -4,17 +4,23 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const sharp = require("sharp");
-const imgbbUploader = require("imgbb-uploader");
 const cliProgress = require("cli-progress");
+const { v4: uuidv4 } = require("uuid");
+const { exec, spawn } = require("child_process");
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const webUrl = process.env.WEB_URL;
 
 app.use(express.json());
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+const imageCache = new Map();
+
+let sshProcess; // Añadir una variable global para el proceso SSH
 
 async function optimizeImages() {
   const imageDir = path.join(__dirname, "web", "public", "images");
@@ -29,6 +35,7 @@ async function optimizeImages() {
     cliProgress.Presets.shades_classic
   );
 
+  console.log("Iniciando optimización de imágenes...");
   progressBar.start(files.length, 0);
 
   const optimizationPromises = files.map(async (file, index) => {
@@ -44,6 +51,7 @@ async function optimizeImages() {
     try {
       await sharp(imagePath).resize(750, 1000).png({ quality: 80 }).toFile(optimizedImagePath);
       optimizedImages.push({ original: imagePath, optimized: optimizedImagePath });
+      imageCache.set(path.basename(imagePath), optimizedImagePath);
     } catch (error) {
       console.error(`Error optimizing image ${file}:`, error);
     } finally {
@@ -56,19 +64,73 @@ async function optimizeImages() {
   return optimizedImages;
 }
 
+async function createReverseTunnel() {
+  return new Promise((resolve, reject) => {
+    sshProcess = spawn("ssh", ["-o", "StrictHostKeyChecking=no", "-R", "80:localhost:3000", "serveo.net"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    sshProcess.stdout.on("data", (data) => {
+      const output = data.toString();
+      console.log(output);
+      const match = output.match(/https:\/\/[a-z0-9]+\.serveo\.net/);
+      if (match) {
+        resolve(match[0]);
+      }
+    });
+
+    sshProcess.stderr.on("data", (data) => {
+      console.error(data.toString());
+    });
+
+    sshProcess.on("error", (error) => {
+      reject(`Error creating reverse tunnel: ${error.message}`);
+    });
+
+    sshProcess.on("close", (code) => {
+      if (code !== 0) {
+        reject(`SSH process exited with code ${code}`);
+      }
+    });
+  });
+}
+
 async function main() {
   const tempDir = path.join(__dirname, "tmp");
+  const playerImgsDir = path.join(tempDir, "playerImgs");
 
   if (fs.existsSync(tempDir)) {
     fs.readdirSync(tempDir).forEach((file) => {
-      fs.unlinkSync(path.join(tempDir, file));
+      const filePath = path.join(tempDir, file);
+      if (fs.lstatSync(filePath).isFile()) {
+        fs.unlinkSync(filePath);
+      }
     });
   } else {
     fs.mkdirSync(tempDir);
   }
 
-  console.log("Iniciando optimización de imágenes...");
-  const optimizedImages = await optimizeImages();
+  if (!fs.existsSync(playerImgsDir)) {
+    fs.mkdirSync(playerImgsDir);
+  } else {
+    fs.readdirSync(playerImgsDir).forEach((file) => {
+      const filePath = path.join(playerImgsDir, file);
+      if (fs.lstatSync(filePath).isFile()) {
+        fs.unlinkSync(filePath);
+      }
+    });
+  }
+
+  try {
+    const tunnelUrl = await createReverseTunnel();
+    console.log(`Tunnel URL: ${tunnelUrl}`);
+    process.env.WEB_URL = tunnelUrl;
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+
+  await optimizeImages();
 
   client.once("ready", () => {
     console.log("Bot ready!");
@@ -96,9 +158,9 @@ async function main() {
       const playerId = process.env[`PLAYER_${playerNumber}`];
       players.push({ name: playerName, image: imageName, id: playerId });
 
-      const optimizedImage = optimizedImages.find((img) => path.basename(img.original) === imageName);
-      if (optimizedImage) {
-        images.push(optimizedImage.optimized);
+      const optimizedImagePath = imageCache.get(imageName);
+      if (optimizedImagePath) {
+        images.push(optimizedImagePath);
       } else {
         return res.status(400).send(`Optimized image not found for ${imageName}`);
       }
@@ -124,7 +186,7 @@ async function main() {
 
       for (const { player, validResizedImages } of resizedImagesResults) {
         const sanitizedPlayerName = player.name.replace(/\s+/g, "_");
-        const combinedImagePath = path.join(tempDir, `combined_${sanitizedPlayerName}.png`);
+        const combinedImagePath = path.join(playerImgsDir, `combined_${sanitizedPlayerName}_${uuidv4()}.png`);
 
         await sharp({
           create: {
@@ -138,9 +200,7 @@ async function main() {
           .png({ quality: 80 })
           .toFile(combinedImagePath);
 
-        const response = await imgbbUploader(process.env.IMGBB_API_KEY, combinedImagePath);
-
-        const imageUrl = response.url;
+        const imageUrl = `${process.env.WEB_URL}/embedImgs/${path.basename(combinedImagePath)}`;
 
         const otherPlayers = players.filter((p) => p !== player);
         const embedDescription = otherPlayers
@@ -190,6 +250,14 @@ async function main() {
   });
 
   app.use("/public", express.static(path.join(__dirname, "web", "public")));
+  app.use("/embedImgs", express.static(playerImgsDir));
 }
+
+process.on("SIGINT", () => {
+  if (sshProcess) {
+    sshProcess.kill();
+  }
+  process.exit();
+});
 
 main();
