@@ -7,3 +7,4 @@ services:
       - PORT=3000
     volumes:
       - ./.env:/app/.env
+      - ./id_rsa:/app/id_rsa
