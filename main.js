@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const dotenv = require("dotenv");
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { createReverseTunnel } = require("./utils/sshUtil.js");
 const { optimizeImages, combineImages } = require("./utils/imagesUtil.js");
 
@@ -123,9 +123,16 @@ async function main() {
           .setColor(0x800080)
           .setImage(imageUrl);
 
+        const buttons = otherPlayers.map((otherPlayer) => {
+          const searchUrl = `https://unduck.link?q=${encodeURIComponent(otherPlayer.name + " vtuber !g")}`;
+          return new ButtonBuilder().setLabel(otherPlayer.name).setStyle(ButtonStyle.Link).setURL(searchUrl);
+        });
+
+        const row = new ActionRowBuilder().addComponents(buttons);
+
         const channel = guild.channels.cache.get(player.id);
         if (channel) {
-          messagePromises.push(channel.send({ embeds: [embed] }));
+          messagePromises.push(channel.send({ embeds: [embed], components: [row] }));
         }
       }
 
