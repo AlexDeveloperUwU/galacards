@@ -201,19 +201,30 @@ async function spin() {
 function resetGame() {
   remainingImages = [...imageList];
   displayedImages = [];
+
   document.querySelectorAll(".reel").forEach((reel, index) => {
     reel.innerHTML = `<div class="number">${index + 1}</div>`;
   });
+
   document.querySelectorAll(".image-name").forEach((name, index) => {
     name.textContent = `VTuber ${index + 1}`;
     name.classList.remove("revealed");
   });
+
   const messageElement = document.getElementById("message");
   if (messageElement) messageElement.style.display = "none";
+
   const spinButton = document.getElementById("spinButton");
   spinButton.textContent = "¡Girar!";
+  spinButton.disabled = false;
+  spinButton.classList.remove("disabled");
   spinButton.removeEventListener("click", resetGame);
   spinButton.addEventListener("click", spin);
+
+  fetch("/cleanChannels", {
+    method: "DELETE",
+  }).catch((error) => console.error("Error cleaning channels:", error));
+
   console.log("Game reset: Remaining images reset to full list.");
 }
 
