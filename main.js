@@ -58,6 +58,26 @@ async function main() {
   client.once("ready", () => {
     console.log("Bot ready!");
 
+    const channel = client.channels.cache.get(process.env.GALAMIAU_CHANNEL);
+    if (channel) {
+      const embed = new EmbedBuilder()
+        .setTitle("URL del juego")
+        .setDescription(`El juego está listo para comenzar. [Haz clic aquí para jugar](${process.env.WEB_URL})`)
+        .setURL(process.env.WEB_URL)
+        .setColor(0x800080);
+
+      const button = new ButtonBuilder()
+        .setLabel("Entrar a la web")
+        .setStyle(ButtonStyle.Link)
+        .setURL(process.env.WEB_URL);
+
+      const row = new ActionRowBuilder().addComponents(button);
+
+      channel.send({ embeds: [embed], components: [row] });
+    } else {
+      console.error("Channel not found");
+    }
+
     app.listen(port, () => {
       console.log(`Servidor escuchando en http://localhost:${port}`);
     });

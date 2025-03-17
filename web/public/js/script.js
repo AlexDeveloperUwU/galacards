@@ -75,7 +75,7 @@ function spinReel(reelElement, finalImage, nameElement, initialImage) {
     const totalHeight = totalImages * imageHeight;
     const finalPosition = (totalImages - 1) * imageHeight;
 
-    audio.volume = 1.0; // Ajustar el volumen antes de cada giro
+    audio.volume = 1.0; 
     audio.play();
 
     function animateReel() {
