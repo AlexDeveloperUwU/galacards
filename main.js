@@ -144,8 +144,13 @@ async function main() {
           .setImage(imageUrl);
 
         const buttons = otherPlayers.map((otherPlayer) => {
-          const searchUrl = `https://unduck.link?q=${encodeURIComponent(otherPlayer.name + " vtuber !g")}`;
-          return new ButtonBuilder().setLabel(otherPlayer.name).setStyle(ButtonStyle.Link).setURL(searchUrl);
+          const searchUrl = `https://unduck.link?q=${encodeURIComponent(
+            path.parse(otherPlayer.image).name + " vtuber !g"
+          )}`;
+          return new ButtonBuilder()
+            .setLabel(path.parse(otherPlayer.image).name)
+            .setStyle(ButtonStyle.Link)
+            .setURL(searchUrl);
         });
 
         const row = new ActionRowBuilder().addComponents(buttons);

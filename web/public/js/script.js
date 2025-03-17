@@ -30,6 +30,9 @@ async function fetchImages() {
 
 window.onload = () => {
   fetchImages();
+  fetch("/cleanChannels", {
+    method: "DELETE",
+  }).catch((error) => console.error("Error cleaning channels:", error));
 };
 
 let remainingImages = [...imageList];
@@ -75,7 +78,7 @@ function spinReel(reelElement, finalImage, nameElement, initialImage) {
     const totalHeight = totalImages * imageHeight;
     const finalPosition = (totalImages - 1) * imageHeight;
 
-    audio.volume = 1.0; 
+    audio.volume = 1.0;
     audio.play();
 
     function animateReel() {
