@@ -21,7 +21,7 @@ async function optimizeImages(imageCache) {
   progressBar.start(files.length, 0);
 
   const optimizationPromises = files.map(async (file, index) => {
-    if (file === "favicon.png" || file === "LOGO.avif") {
+    if (file === "favicon.png" || file === "LOGO.avif" || file === "TC.avif") {
       progressBar.increment();
       return;
     }

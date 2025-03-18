@@ -186,7 +186,7 @@ async function main() {
         return res.status(500).json({ error: "Failed to read images" });
       }
 
-      const images = files.filter((file) => file !== "favicon.png" && file !== "LOGO.avif");
+      const images = files.filter((file) => file !== "favicon.png" && file !== "LOGO.avif" && file !== "TC.avif");
       res.json(images);
     });
   });
