@@ -2,6 +2,7 @@ const { spawn } = require("child_process");
 const path = require("path");
 
 let sshProcess;
+let currentTunnelUrl;
 
 async function createReverseTunnel() {
   return new Promise((resolve, reject) => {
@@ -18,8 +19,12 @@ async function createReverseTunnel() {
       const output = data.toString();
       const match = output.match(/https:\/\/[a-z0-9]+\.lhr\.life/);
       if (match) {
-        console.log(`Tunnel URL: ${match[0]}`);
-        resolve(match[0]);
+        const newTunnelUrl = match[0];
+        if (newTunnelUrl !== currentTunnelUrl) {
+          currentTunnelUrl = newTunnelUrl;
+          console.log(`Tunnel URL: ${newTunnelUrl}`);
+          resolve(newTunnelUrl);
+        }
       }
     });
 
@@ -39,4 +44,8 @@ async function createReverseTunnel() {
   });
 }
 
-module.exports = { createReverseTunnel };
+function getCurrentTunnelUrl() {
+  return currentTunnelUrl;
+}
+
+module.exports = { createReverseTunnel, getCurrentTunnelUrl };

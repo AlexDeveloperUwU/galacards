@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const dotenv = require("dotenv");
 const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
-const { createReverseTunnel } = require("./utils/sshUtil.js");
+const { createReverseTunnel, getCurrentTunnelUrl } = require("./utils/sshUtil.js");
 const { optimizeImages, combineImages } = require("./utils/imagesUtil.js");
 
 dotenv.config();
@@ -55,7 +55,7 @@ async function main() {
 
   await optimizeImages(imageCache);
 
-  client.once("ready", () => {
+  client.once("ready", async () => {
     console.log("Bot ready!");
 
     const channel = client.channels.cache.get(process.env.GALAMIAU_CHANNEL);
@@ -73,10 +73,33 @@ async function main() {
 
       const row = new ActionRowBuilder().addComponents(button);
 
-      channel.send({ embeds: [embed], components: [row] });
+      await channel.send({ embeds: [embed], components: [row] });
     } else {
       console.error("Channel not found");
     }
+
+    setInterval(async () => {
+      const currentTunnelUrl = getCurrentTunnelUrl();
+      if (currentTunnelUrl && currentTunnelUrl !== process.env.WEB_URL) {
+        process.env.WEB_URL = currentTunnelUrl;
+        if (channel) {
+          const embed = new EmbedBuilder()
+            .setTitle("Nuevo URL del juego")
+            .setDescription(`El enlace del juego ha cambiado. [Haz clic aquí para jugar](${currentTunnelUrl})`)
+            .setURL(currentTunnelUrl)
+            .setColor(0x800080);
+
+          const button = new ButtonBuilder()
+            .setLabel("Entrar a la web")
+            .setStyle(ButtonStyle.Link)
+            .setURL(currentTunnelUrl);
+
+          const row = new ActionRowBuilder().addComponents(button);
+
+          await channel.send({ content: "<@1080658502177001562>", embeds: [embed], components: [row] });
+        }
+      }
+    }, 60000);
 
     app.listen(port, () => {
       console.log(`Servidor escuchando en http://localhost:${port}`);
@@ -220,7 +243,7 @@ process.on("SIGINT", () => {
   if (sshProcess) {
     sshProcess.kill();
   }
-  client.destroy(); // Cierra la conexión del cliente de Discord
+  client.destroy();
   process.exit();
 });
 
