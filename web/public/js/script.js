@@ -30,9 +30,6 @@ async function fetchImages() {
 
 window.onload = () => {
   fetchImages();
-  fetch("/cleanChannels", {
-    method: "DELETE",
-  }).catch((error) => console.error("Error cleaning channels:", error));
 };
 
 let remainingImages = [...imageList];
@@ -125,23 +122,8 @@ async function spin() {
   spinButton.disabled = true;
   spinButton.classList.add("disabled");
 
-  const reels = [
-    document.getElementById("reel1"),
-    document.getElementById("reel2"),
-    document.getElementById("reel3"),
-    document.getElementById("reel4"),
-  ];
-
-  const names = [
-    document.getElementById("name1"),
-    document.getElementById("name2"),
-    document.getElementById("name3"),
-    document.getElementById("name4"),
-  ];
-
-  const messageElement = document.getElementById("message");
-
   if (remainingImages.length < 4) {
+    const messageElement = document.getElementById("message");
     if (messageElement) messageElement.style.display = "block";
     spinButton.disabled = false;
     spinButton.classList.remove("disabled");
@@ -172,14 +154,6 @@ async function spin() {
   names.forEach((name, index) => {
     name.textContent = selectedImages[index].split(".")[0];
   });
-
-  fetch("/djs", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ selectedImages }),
-  }).catch((error) => console.error("Error posting selected images:", error));
 
   const spinPromises = reels.map((reel, index) => {
     const initialImage = previousImages[index] || getRandomImage(imageList);
@@ -223,10 +197,6 @@ function resetGame() {
   spinButton.classList.remove("disabled");
   spinButton.removeEventListener("click", resetGame);
   spinButton.addEventListener("click", spin);
-
-  fetch("/cleanChannels", {
-    method: "DELETE",
-  }).catch((error) => console.error("Error cleaning channels:", error));
 
   console.log("Game reset: Remaining images reset to full list.");
 }

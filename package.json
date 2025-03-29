@@ -8,11 +8,8 @@
   },
   "author": "AlexDeveloperUwU",
   "dependencies": {
-    "cli-progress": "^3.12.0",
-    "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "sharp": "^0.33.5",
     "uuid": "^11.1.0"
   }
 }
