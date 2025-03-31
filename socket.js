@@ -16,29 +16,42 @@ async function initializeDatabase() {
 }
 
 async function registerSocketHandlers(socket) {
-  console.log("Cliente conectado:", socket.id);
+  console.log(`Nuevo cliente conectado! Socket ID: ${socket.id} Player ID: ${socket.handshake.query.id}`);
 
-  if (socket.handshake.query.id === "galawaController") {
-    const players = db.data.players || [];
-    socket.emit("initialData", players);
-  }
+  //! Mensaje para obtener los datos de los jugadores
+  socket.on("getPlayerData", () => {
+    const players = db.data.players;
+    socket.emit("playerData", players);
+  });
 
   //! Mensaje para generar los datos de los jugadores
   socket.on("generatePlayerData", async () => {
     db.data.players = [];
-    for (let i = 0; i < 4; i++) {
+
+    // Crear el host (player 0)
+    const hostId = nanoid(8);
+    const isLocalhost = socket.handshake.headers.host.includes("localhost");
+    const protocol = isLocalhost ? "http" : "https";
+    const host = {
+      id: hostId,
+      vdoUrl: `https://vdo.ninja/?push=${hostId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&autostart&device=1&room=glykroompush`,
+      name: "Host",
+    };
+    db.data.players.push(host);
+
+    // Crear los 4 jugadores (player 1 - player 4)
+    for (let i = 1; i <= 4; i++) {
       const pId = nanoid(8);
-      const isLocalhost = socket.handshake.headers.host.includes("localhost");
-      const protocol = isLocalhost ? "http" : "https";
       const player = {
         id: pId,
         playerUrl: `${protocol}://${socket.handshake.headers.host}/player?id=${pId}`,
         vdoUrl: `https://vdo.ninja/?push=${pId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&autostart&device=1&room=glykroompush`,
-        name: `Jugador ${i + 1}`,
+        name: `Jugador ${i}`,
         score: 0,
       };
       db.data.players.push(player);
     }
+
     await db.write();
     const players = db.data.players;
     socket.emit("generatedPlayerData", players);
