@@ -4,19 +4,17 @@
   <title><%= title %></title>
   <link rel="icon" href="/public/images/favicon.png" type="image/png">
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io(window.location.host);
-  </script>
+  <script src="/public/js/swal.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap');
 
     ::-webkit-scrollbar {
       display: none;
     }
 
     body {
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Comfortaa', sans-serif;
     }
   </style>
   <script>
@@ -36,7 +34,9 @@
           animation: {
             glow: 'glow 2.5s infinite',
             float: 'float 6s ease-in-out infinite',
-            pulse: 'pulse 3s infinite'
+            pulse: 'pulse 3s infinite',
+            fadeIn: 'fadeIn 0.3s ease-in-out forwards',
+            fadeOut: 'fadeOut 0.3s ease-in-out forwards'
           },
           keyframes: {
             glow: {
@@ -53,6 +53,22 @@
               },
               '50%': {
                 transform: 'translateY(-10px)'
+              }
+            },
+            fadeIn: {
+              from: {
+                opacity: 0
+              },
+              to: {
+                opacity: 1
+              }
+            },
+            fadeOut: {
+              from: {
+                opacity: 1
+              },
+              to: {
+                opacity: 0
               }
             }
           },
