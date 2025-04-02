@@ -120,9 +120,19 @@
       console.log('Desconectado del servidor');
     });
 
-    socket.on("initialData", (players) => {
+    socket.on("playerData", (players) => {
+      console.log("Recibido playerData:", players);
 
-    })
+      players.slice(1).forEach((player, index) => {
+        const playerName = document.getElementById(`playerName${index + 1}`);
+        const playerIframe = document.getElementById(`player${index + 1}iframe`);
+
+        if (playerName && playerIframe) {
+          playerName.innerText = player.name;
+          playerIframe.src = `https://vdo.ninja/?view=${player.id}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+        }
+      });
+    });
 
     socket.on('generatedPlayerData', (players) => {
       const contentHtml = players.map(player => {

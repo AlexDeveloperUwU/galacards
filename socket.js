@@ -16,12 +16,11 @@ async function initializeDatabase() {
 }
 
 async function registerSocketHandlers(socket) {
-  console.log(`Nuevo cliente conectado! Socket ID: ${socket.id} Player ID: ${socket.handshake.query.id}`);
+  console.log(`Cliente conectado. Socket ID: ${socket.id} Player ID: ${socket.handshake.query.id}`);
 
   //! Mensaje para obtener los datos de los jugadores
   socket.on("getPlayerData", () => {
-    const players = db.data.players;
-    socket.emit("playerData", players);
+    sendPlayerData(socket);
   });
 
   //! Mensaje para generar los datos de los jugadores
@@ -67,8 +66,16 @@ async function initializeSocket(server) {
   const io = new Server(server);
 
   io.on("connection", (socket) => {
+    sendPlayerData(socket);
     registerSocketHandlers(socket);
   });
+}
+
+//! Funciones auxiliares para el Socket
+
+async function sendPlayerData(socket) {
+  const players = db.data.players;
+  socket.emit("playerData", players);
 }
 
 export default initializeSocket;
