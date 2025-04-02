@@ -4,7 +4,8 @@
   "main": "main.js",
   "type": "module",
   "scripts": {
-    "start": "node main.js"
+    "start": "node main.js",
+    "dev": "npx nodemon --ignore data main.js"
   },
   "author": "AlexDeveloperUwU",
   "dependencies": {
