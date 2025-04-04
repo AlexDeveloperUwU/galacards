@@ -33,6 +33,10 @@ app.use(express.json());
 //! Rutas
 app.use("/api", apiRoutes);
 app.use("/", webRoutes);
+app.get("/error/:code", (req, res) => {
+  const code = parseInt(req.params.code, 10) || 404;
+  res.status(code).render("error", { title: `Qué soy? | Error ${code}`, errorCode: code });
+});
 
 app.use("/public", express.static(path.join(__dirname, "web", "public")));
 

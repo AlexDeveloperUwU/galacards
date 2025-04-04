@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('components/head') %>
+
+<body class="min-h-screen p-10 md:p-16 flex flex-col items-center justify-center bg-gradient-to-b from-[#2a1e37] to-[#221824]">
+  <h1 class="text-5xl md:text-6xl text-white font-bold mb-10 animate-glow tracking-wider">¿Quién soy?</h1>
+
+  <div class="w-full max-w-7xl mx-auto rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm">
+    <div class="p-6 md:p-8 bg-purple-bg rounded-2xl">
+      <% if (errorCode === 400) { %>
+      <h2 class="text-3xl text-purple-light font-bold mb-4">Error 400: Solicitud incorrecta</h2>
+      <p class="text-white text-lg">El michi no entiende lo que le pides. ¿Seguro que está todo bien escrito? 🐾❓</p>
+      <img src="https://http.cat/400.jpg" alt="Error 400 michi" class="mt-4 rounded-lg shadow-lg border-2 border-purple-light">
+      <% } else if (errorCode === 401) { %>
+      <h2 class="text-3xl text-purple-light font-bold mb-4">Error 401: No autorizado</h2>
+      <p class="text-white text-lg">Este minino no te deja pasar. Quizás un poco de atún lo convenza. 🐾🚫</p>
+      <img src="https://http.cat/401.jpg" alt="Error 401 minino" class="mt-4 rounded-lg shadow-lg border-2 border-purple-light">
+      <% } else if (errorCode === 403) { %>
+      <h2 class="text-3xl text-purple-light font-bold mb-4">Error 403: Prohibido</h2>
+      <p class="text-white text-lg">Este minino dice que no tienes permiso para entrar. Mejor no insistas. 🐱🚷</p>
+      <img src="https://http.cat/403.jpg" alt="Error 403 minino" class="mt-4 rounded-lg shadow-lg border-2 border-purple-light">
+      <% } else if (errorCode === 404) { %>
+      <h2 class="text-3xl text-purple-light font-bold mb-4">Error 404: No encontrado</h2>
+      <p class="text-white text-lg">El michi buscó por todos lados, pero no encontró nada. Tal vez está en otro rincón. 🐱🔍</p>
+      <img src="https://http.cat/404.jpg" alt="Error 404 michi" class="mt-4 rounded-lg shadow-lg border-2 border-purple-light">
+      <% } else if (errorCode === 500) { %>
+      <h2 class="text-3xl text-purple-light font-bold mb-4">Error 500: Error interno del servidor</h2>
+      <p class="text-white text-lg">El michi está intentando arreglarlo, pero parece que necesita una siesta. 🐾💤</p>
+      <img src="https://http.cat/500.jpg" alt="Error 500 michi" class="mt-4 rounded-lg shadow-lg border-2 border-purple-light">
+      <% } else { %>
+      <h2 class="text-3xl text-purple-light font-bold mb-4">Error desconocido</h2>
+      <p class="text-white text-lg">El minino no sabe qué pasó, pero está aquí para consolarte. 😺❓</p>
+      <img src="https://http.cat/520.jpg" alt="Error desconocido minino" class="mt-4 rounded-lg shadow-lg border-2 border-purple-light">
+      <% } %>
+    </div>
+  </div>
+
+  <%- include('components/scripts') %>
+</body>
+
+</html>

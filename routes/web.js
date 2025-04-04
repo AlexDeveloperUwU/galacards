@@ -17,7 +17,7 @@ const isHost = async (req, res, next) => {
   if (players[0] && players[0].id === userId) {
     return next();
   }
-  return res.status(403).send("Acceso denegado: Solo el host puede acceder.");
+  return res.redirect("/error/403");
 };
 
 const isHostOrPlayer = async (req, res, next) => {
@@ -29,7 +29,7 @@ const isHostOrPlayer = async (req, res, next) => {
   if (players.some((player) => player.id === userId)) {
     return next();
   }
-  return res.status(403).send("Acceso denegado: Solo el host o un jugador válido pueden acceder.");
+  return res.redirect("/error/403");
 };
 
 router.get("/v1", (req, res) => {
