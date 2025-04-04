@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "start": "node main.js",
-    "dev": "npx nodemon --ignore data main.js"
+    "dev": "npx nodemon --ignore data main.js",
+    "devReset": "npx nodemon --ignore data main.js dataReset"
   },
   "author": "AlexDeveloperUwU",
   "dependencies": {
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
-    "http": "^0.0.1-security",
     "lowdb": "^7.0.1",
     "nanoid": "^5.1.5",
     "socket.io": "^4.8.1",
