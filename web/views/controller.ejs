@@ -109,8 +109,22 @@
   </div>
 
   <script>
-    //! Socket.io client
-    const socket = io(window.location.host);
+    const queryParams = new URLSearchParams(window.location.search);
+    const playerId = queryParams.get('id');
+
+    const socket = io(window.location.host, {
+      auth: {
+        id: playerId
+      }
+    });
+
+    socket.on('connect', () => {
+      console.log('Conectado al servidor con ID:', playerId);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Error de conexión:', err.message);
+    });
 
     let hostId = null;
 

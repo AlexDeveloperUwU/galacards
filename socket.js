@@ -16,21 +16,21 @@ async function initializeDatabase() {
 
 //! Función para gestionar los mensajes del socket
 async function registerSocketHandlers(socket) {
-  console.log(`Cliente conectado. Socket ID: ${socket.id} Player ID: ${socket.handshake.query.id}`);
+  const playerId = socket.playerId;
+  console.log(`Cliente conectado. Socket ID: ${socket.id} Player ID: ${playerId}`);
 
-  // Mensaje para obtener los datos de los jugadores
+  // Función para enviar los datos al cliente
   socket.on("getPlayerData", () => {
     sendPlayerData(socket);
   });
 
-  // Mensaje para guardar el nombre del jugador
+  // Función para guardar el nombre del jugador
   socket.on("savePlayerName", async (data) => {
-    const { playerId, name } = data;
+    const { name } = data;
     await savePlayerName(playerId, name);
     sendPlayerData(socket);
   });
 
-  // Mensaje para cuando se desconecta un jugador
   socket.on("disconnect", () => {
     console.log("Cliente desconectado:", socket.id);
   });
@@ -40,8 +40,28 @@ async function initializeSocket(server) {
   await initializeDatabase();
   const io = new Server(server);
 
+  io.use((socket, next) => {
+    const playerId = socket.handshake.auth.id;
+
+    if (!playerId) {
+      console.log("Desconectando: falta el ID de autenticación");
+      socket.disconnect(true); 
+      return;
+    }
+
+    const player = db.data.players.find((p) => p.id === playerId);
+    if (!player) {
+      console.log(`Desconectando: ID de autenticación no válido (${playerId})`);
+      socket.disconnect(true); 
+      return;
+    }
+
+    socket.playerId = playerId;
+    next();
+  });
+
   io.on("connection", (socket) => {
-    sendPlayerData(socket);
+    console.log(`Cliente autenticado. Socket ID: ${socket.id} Player ID: ${socket.playerId}`);
     registerSocketHandlers(socket);
   });
 }
