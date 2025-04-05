@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN apk add --no-cache openssh && npm install
+RUN npm install
 
 COPY . .
 
