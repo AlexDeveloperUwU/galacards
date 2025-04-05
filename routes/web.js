@@ -1,16 +1,18 @@
 import { Router } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { JSONFilePreset } from "lowdb/node";
+import { readFile } from "fs/promises";
+
+const data = await readFile('./config/config.json', 'utf-8');
+const config = JSON.parse(data);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = Router();
 
-const isHost = async (req, res, next) => {
-  const dbFile = path.join(__dirname, "..", "data", "db.json");
-  const db = await JSONFilePreset(dbFile, { players: [] });
+const isHost = (req, res, next) => {
+  const db = getDatabase();
   const players = db.data.players || [];
   const userId = req.query.id;
 
@@ -20,9 +22,8 @@ const isHost = async (req, res, next) => {
   return res.redirect("/error/403");
 };
 
-const isHostOrPlayer = async (req, res, next) => {
-  const dbFile = path.join(__dirname, "..", "data", "db.json");
-  const db = await JSONFilePreset(dbFile, { players: [] });
+const isHostOrPlayer = (req, res, next) => {
+  const db = getDatabase();
   const players = db.data.players || [];
   const userId = req.query.id;
 
@@ -33,23 +34,23 @@ const isHostOrPlayer = async (req, res, next) => {
 };
 
 router.get("/v1", (req, res) => {
-  res.render("v1");
+  res.render("v1", { title: `${config.gameName} | Versión 1` });
 });
 
 router.get("/", (req, res) => {
-  res.render("index", { title: "Qué soy? | Inicio" });
+  res.render("index", { title: `Inicio | ${config.gameName}` });
 });
 
 router.get("/overlay", (req, res) => {
-  res.render("overlay", { title: "Qué soy? | Overlay" });
+  res.render("overlay", { title: `Overlay | ${config.gameName}` });
 });
 
 router.get("/controller", isHost, (req, res) => {
-  res.render("controller", { title: "Qué soy? | Control" });
+  res.render("controller", { title: `Control | ${config.gameName}` });
 });
 
 router.get("/player", isHostOrPlayer, (req, res) => {
-  res.render("player", { title: "Qué soy? | Jugador" });
+  res.render("player", { title: `Juego | ${config.gameName}` });
 });
 
 router.get("/sw.js", (req, res) => {

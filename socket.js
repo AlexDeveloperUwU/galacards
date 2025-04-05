@@ -1,18 +1,5 @@
-import path from "path";
 import { Server } from "socket.io";
-import { fileURLToPath } from "url";
-import { JSONFilePreset } from "lowdb/node";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const dbFile = path.join(__dirname, "data", "db.json");
-const defaultData = { players: [] };
-let db;
-
-async function initializeDatabase() {
-  db = await JSONFilePreset(dbFile, defaultData);
-}
+import { initializeDatabase, getDatabase, savePlayerName } from "./utils/db.js";
 
 //! Función para gestionar los mensajes del socket
 async function registerSocketHandlers(socket) {
@@ -36,6 +23,7 @@ async function registerSocketHandlers(socket) {
   });
 }
 
+//! Función para inicializar el socket
 async function initializeSocket(server) {
   await initializeDatabase();
   const io = new Server(server);
@@ -45,14 +33,15 @@ async function initializeSocket(server) {
 
     if (!playerId) {
       console.log("Desconectando: falta el ID de autenticación");
-      socket.disconnect(true); 
+      socket.disconnect(true);
       return;
     }
 
+    const db = getDatabase();
     const player = db.data.players.find((p) => p.id === playerId);
     if (!player) {
       console.log(`Desconectando: ID de autenticación no válido (${playerId})`);
-      socket.disconnect(true); 
+      socket.disconnect(true);
       return;
     }
 
@@ -70,17 +59,9 @@ async function initializeSocket(server) {
 
 // Función para enviar los datos de los jugadores al cliente
 async function sendPlayerData(socket) {
+  const db = getDatabase();
   const players = db.data.players;
   socket.emit("playerData", players);
-}
-
-// Función para guardar el nombre del jugador
-async function savePlayerName(playerId, name) {
-  const player = db.data.players.find((p) => p.id === playerId);
-  if (player) {
-    player.name = name;
-    await db.write();
-  }
 }
 
 export default initializeSocket;

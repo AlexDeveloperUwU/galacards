@@ -3,8 +3,5 @@ services:
     build: .
     ports:
       - "3000:3000"
-    environment:
-      - PORT=3000
     volumes:
-      - ./.env:/app/.env
-      - ./id_rsa:/app/id_rsa
+      - ./config:/app/config
