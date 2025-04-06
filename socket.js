@@ -11,6 +11,22 @@ async function registerSocketHandlers(socket) {
     sendPlayerData(socket);
   });
 
+  // Función para enviar los enlaces de los jugadores
+  socket.on("getPlayerLinks", () => {
+    const db = getDatabase();
+    const players = db.data.players || [];
+
+    const playerLinks = players.map((player) => {
+      return {
+        name: player.name,
+        vdoUrl: player.vdoUrl,
+        gameUrl: player.gameUrl,
+      };
+    });
+
+    socket.emit("playerLinks", playerLinks);
+  });
+
   // Función para guardar el nombre del jugador
   socket.on("savePlayerName", async (data) => {
     const { name } = data;

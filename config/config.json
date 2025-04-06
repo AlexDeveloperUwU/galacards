@@ -1,5 +1,5 @@
 {
-  "gameUrl": "https://example.com",
-  "gamePort": 8080,
+  "gameUrl": "http://localhost:3000",
+  "gamePort": 3000,
   "gameName": "¿Quién soy?"
 }

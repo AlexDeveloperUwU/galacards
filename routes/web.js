@@ -2,8 +2,9 @@ import { Router } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { readFile } from "fs/promises";
+import { getDatabase } from "../utils/db.js";
 
-const data = await readFile('./config/config.json', 'utf-8');
+const data = await readFile("./config/config.json", "utf-8");
 const config = JSON.parse(data);
 
 const __filename = fileURLToPath(import.meta.url);

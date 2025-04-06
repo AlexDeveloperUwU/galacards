@@ -50,7 +50,7 @@ initializeSocket(server);
 await initializeDatabase();
 
 if (process.argv.includes("dataReset")) {
-  await generatePlayerData(config.gameBaseUrl, nanoid);
+  await generatePlayerData(config.gameUrl, nanoid);
 }
 
 // Obtener el ID del host desde la base de datos
@@ -60,7 +60,7 @@ const hostId = db.data.players[0]?.id;
 server.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
   if (hostId) {
-    console.log(`Controller disponible en ${config.gameBaseUrl}/controller?id=${hostId}`);
+    console.log(`Controller disponible en ${config.gameUrl}/controller?id=${hostId}`);
   } else {
     console.log("No se pudo obtener el ID del host.");
   }

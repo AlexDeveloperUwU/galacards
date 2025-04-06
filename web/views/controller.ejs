@@ -104,8 +104,8 @@
               <button class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md transform hover:translate-y-[-2px]" id="changingGameButton">
                 ¡Girar!
               </button>
-              <button id="generateLinks" class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md transform hover:translate-y-[-2px]">
-                Generar links
+              <button id="getPlayerLinks" class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md transform hover:translate-y-[-2px]">
+                Obtener links
               </button>
             </div>
           </div>
@@ -129,6 +129,7 @@
 
     socket.on('connect', () => {
       console.log('Conectado al servidor con ID:', playerId);
+      socket.emit('getPlayerData');
     });
 
     socket.on('connect_error', (err) => {
@@ -136,10 +137,6 @@
     });
 
     let hostId = null;
-
-    socket.on('connect', () => {
-      console.log('Conectado al servidor');
-    });
 
     socket.on('disconnect', () => {
       console.log('Desconectado del servidor');
@@ -213,9 +210,9 @@
       sendPlayerData(socket);
     });
 
-    socket.on('generatedPlayerData', (players) => {
+    socket.on('playerLinks', (players) => {
       const contentHtml = players.map(player => {
-        if (player.name === "Host") {
+        if (player.name === players[0]?.name) {
           return `
             <div class="bg-purple-bg bg-opacity-94 rounded-lg p-3">
               <p class="text-white">Nombre: <span class="font-bold text-purple-light">${player.name}</span></p>
@@ -265,30 +262,10 @@
           });
         }
       });
-      socket.emit("getPlayerData");
     });
 
-    const generateLinksButton = document.getElementById('generateLinks');
-    generateLinksButton.addEventListener('click', () => {
-      Swal.fire({
-        title: '¿Estás segura?',
-        text: `¡Esto hará que los enlaces anteriores dejen de funcionar! \n\n Por cierto, que solo se mostrarán una vez así que ten cuidado con donde tocas, eh?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Warevah, dale!',
-        cancelButtonText: 'Ñeh, mejor no',
-        customClass: {
-          popup: 'bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[30%]',
-          title: 'text-3xl text-white font-bold mb-4 text-center',
-          htmlContainer: 'text-white text-base text-center',
-          confirmButton: 'mt-4 w-[100%] mx-auto py-2 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md',
-          cancelButton: 'mt-4 w-[100%] mx-auto py-2 bg-gray-500 text-white text-base font-bold rounded-lg hover:bg-gray-600 transition-colors duration-300 shadow-md'
-        }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          socket.emit('generatePlayerData');
-        }
-      });
+    document.getElementById("getPlayerLinks").addEventListener("click", () => {
+      socket.emit("getPlayerLinks");
     });
   </script>
 
