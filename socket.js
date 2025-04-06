@@ -4,7 +4,6 @@ import { initializeDatabase, getDatabase, savePlayerName } from "./utils/db.js";
 //! Función para gestionar los mensajes del socket
 async function registerSocketHandlers(socket) {
   const playerId = socket.playerId;
-  console.log(`Cliente conectado. Socket ID: ${socket.id} Player ID: ${playerId}`);
 
   // Función para enviar los datos al cliente
   socket.on("getPlayerData", () => {
@@ -32,6 +31,15 @@ async function registerSocketHandlers(socket) {
     const { name } = data;
     await savePlayerName(playerId, name);
     sendPlayerData(socket);
+  });
+
+  // Manejar el evento de "spin"
+  socket.on("spin", () => {
+    handleSpin(socket);
+  });
+
+  socket.on("resetImageLists", () => {
+    handleResetImageLists(socket);
   });
 
   socket.on("disconnect", () => {
@@ -78,6 +86,52 @@ async function sendPlayerData(socket) {
   const db = getDatabase();
   const players = db.data.players;
   socket.emit("playerData", players);
+}
+
+// Función auxiliar para seleccionar imágenes aleatorias
+function getRandomImages(array, count) {
+  const shuffled = array.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
+// Función auxiliar para manejar el evento "spin"
+function handleSpin(socket) {
+  const db = getDatabase();
+  const imageList = db.data.game.images || [];
+  const remainingImages = db.data.game.remainingImages;
+
+  if (remainingImages.length < 4) {
+    socket.emit("spinResult", { error: "No hay suficientes imágenes restantes." });
+    return;
+  }
+
+  const selectedImages = getRandomImages(remainingImages, 4);
+  const spinData = selectedImages.map((finalImage) => {
+    const fillerImages = getRandomImages(
+      imageList.filter((img) => img !== finalImage),
+      7
+    );
+    return [...fillerImages, finalImage];
+  });
+
+  db.data.game.remainingImages = remainingImages.filter(
+    (img) => !selectedImages.includes(img)
+  );
+
+  const hasMoreRounds = db.data.game.remainingImages.length >= 4;
+
+  db.write().then(() => {
+    socket.emit("spinResult", { spinData, selectedImages, hasMoreRounds });
+  });
+}
+
+// Función auxiliar para manejar el evento "resetImageLists"
+function handleResetImageLists(socket) {
+  const db = getDatabase();
+  db.data.game.remainingImages = [...db.data.game.images];
+  db.write().then(() => {
+    socket.emit("resetComplete");
+  });
 }
 
 export default initializeSocket;

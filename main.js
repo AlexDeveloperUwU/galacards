@@ -3,11 +3,10 @@ import path from "path";
 import http from "http";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import apiRoutes from "./routes/api.js";
 import webRoutes from "./routes/web.js";
 import initializeSocket from "./socket.js";
 import { nanoid } from "nanoid";
-import { initializeDatabase, generatePlayerData, getDatabase } from "./utils/db.js";
+import { initializeDatabase, generatePlayerData, getDatabase, generateImageArray } from "./utils/db.js";
 import { readFile } from "fs/promises";
 
 const data = await readFile('./config/config.json', 'utf-8');
@@ -32,7 +31,6 @@ app.set("views", path.join(__dirname, "web", "views"));
 app.use(express.json());
 
 //! Rutas
-app.use("/api", apiRoutes);
 app.use("/", webRoutes);
 app.get("/error/:code", (req, res) => {
   const code = parseInt(req.params.code, 10) || 404;
@@ -49,8 +47,9 @@ initializeSocket(server);
 // Inicializar base de datos
 await initializeDatabase();
 
-if (process.argv.includes("dataReset")) {
+if (process.argv.includes("resetData")) {
   await generatePlayerData(config.gameUrl, nanoid);
+  await generateImageArray();
 }
 
 // Obtener el ID del host desde la base de datos

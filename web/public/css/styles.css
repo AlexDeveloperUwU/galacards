@@ -138,6 +138,11 @@ button:disabled {
   background-color: rgba(139, 69, 139, 0.5);
 }
 
+.blurred {
+  filter: blur(5px);
+  transition: filter 0.3s ease-in-out;
+}
+
 @keyframes glow {
   0% {
     opacity: 0.8;
