@@ -39,6 +39,7 @@ async function registerSocketHandlers(socket) {
   });
 
   socket.on("resetImageLists", () => {
+    console.log("Resetting image lists...");
     handleResetImageLists(socket);
   });
 
@@ -109,15 +110,12 @@ function handleSpin(socket) {
   const spinData = selectedImages.map((finalImage) => {
     const fillerImages = getRandomImages(
       imageList.filter((img) => img !== finalImage),
-      7
+      14 
     );
     return [...fillerImages, finalImage];
   });
 
-  db.data.game.remainingImages = remainingImages.filter(
-    (img) => !selectedImages.includes(img)
-  );
-
+  db.data.game.remainingImages = remainingImages.filter((img) => !selectedImages.includes(img));
   const hasMoreRounds = db.data.game.remainingImages.length >= 4;
 
   db.write().then(() => {
@@ -127,6 +125,7 @@ function handleSpin(socket) {
 
 // Función auxiliar para manejar el evento "resetImageLists"
 function handleResetImageLists(socket) {
+  console.log("Resetting image lists...");
   const db = getDatabase();
   db.data.game.remainingImages = [...db.data.game.images];
   db.write().then(() => {
