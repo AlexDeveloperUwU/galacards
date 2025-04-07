@@ -3,6 +3,7 @@ document.getElementById("background-video").playbackRate = 0.5;
 
 const queryParams = new URLSearchParams(window.location.search);
 const playerId = queryParams.get("id");
+const isDevMode = queryParams.get("dev") === "true";
 
 const socket = io(window.location.host, {
   auth: { id: playerId },
@@ -168,6 +169,9 @@ function handleSpinButton() {
 socket.on("connect", () => {
   console.log("Conectado al servidor con ID:", playerId);
   socket.emit("getPlayerData");
+  if (isDevMode) {
+    socket.emit("resetImageLists");
+  }
 });
 
 socket.on("connect_error", (err) => {

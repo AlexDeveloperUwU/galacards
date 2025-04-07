@@ -64,7 +64,7 @@ export async function generateImageArray() {
       return res.status(500).json({ error: "No se pudo leer las imágenes" });
     }
 
-    const images = files.filter((file) => file !== "favicon.png" && file !== "LOGO.avif" && file !== "TC.avif");
+    const images = files.filter((file) => file !== "favicon.png" && file !== "LOGO.avif" && file !== "TC.avif" && file !== "GENERAL.avif");
     db.data.game.images = images;
     db.data.game.remainingImages = [...images];
   });

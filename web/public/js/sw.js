@@ -36,9 +36,31 @@ self.addEventListener("fetch", (event) => {
             if (event.request.destination === "document") {
               return caches.match("/index.html");
             }
+
+            // Respuesta predeterminada para otros tipos de solicitudes
+            return new Response("Contenido no disponible", {
+              status: 503,
+              statusText: "Servicio no disponible",
+            });
           });
       })
     );
+  }
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "CLEAR_CACHE") {
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName.startsWith("cache-")) {
+            return caches.delete(cacheName);
+          }
+        })
+      ).then(() => {
+        console.log("Caché limpiado manualmente.");
+      });
+    });
   }
 });
 
