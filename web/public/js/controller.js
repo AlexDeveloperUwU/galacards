@@ -5,11 +5,46 @@ const queryParams = new URLSearchParams(window.location.search);
 const playerId = queryParams.get("id");
 const isDevMode = queryParams.get("dev") === "true";
 
+window.onload = () => {
+  fetchImages();
+};
+
 const socket = io(window.location.host, {
   auth: { id: playerId },
 });
 
 let hostId = null;
+
+// Eventos del socket
+socket.on("connect", () => {
+  console.log("Conectado al servidor con ID:", playerId);
+  socket.emit("getPlayerData");
+  if (isDevMode) {
+    socket.emit("resetImageLists");
+  }
+});
+
+socket.on("connect_error", (err) => {
+  console.error("Error de conexión:", err.message);
+});
+
+socket.on("disconnect", () => {
+  console.log("Desconectado del servidor");
+});
+
+socket.on("playerData", handlePlayerData);
+
+socket.on("savePlayerName", async (data) => {
+  const { playerId, name } = data;
+  await savePlayerName(playerId, name);
+  sendPlayerData(socket);
+});
+
+socket.on("playerLinks", displayPlayerLinks);
+
+socket.on("resetComplete", () => {
+  console.log("Juego reseteado. Listo para empezar de nuevo.");
+});
 
 // Funciones auxiliares
 function handlePlayerData(players) {
@@ -135,12 +170,13 @@ function handleSpinButton() {
   if (button.textContent === "Reset") {
     socket.emit("resetImageLists");
     button.textContent = "¡Girar!";
-    button.disabled = false;
-    button.classList.remove("disabled");
   } else {
+    socket.emit("spin");
+
+    // Lo desactivamos para que no se repita el evento
     socket.off("spinResult");
 
-    socket.on("spinResult", (data) => {
+    socket.on("spinResult", async (data) => {
       if (data.error) {
         console.error(data.error);
         return;
@@ -151,50 +187,18 @@ function handleSpinButton() {
       console.log("Selected images:", selectedImages);
       console.log("Has more rounds:", hasMoreRounds);
 
+      await spin(spinData, selectedImages);
+
       spinData.forEach((reelData, index) => {
         console.log(`Jugador ${index + 1}:`, reelData);
       });
 
       if (!hasMoreRounds) {
         button.textContent = "Reset";
-        button.disabled = false;
       }
     });
-
-    socket.emit("spin");
   }
 }
-
-// Eventos del socket
-socket.on("connect", () => {
-  console.log("Conectado al servidor con ID:", playerId);
-  socket.emit("getPlayerData");
-  if (isDevMode) {
-    socket.emit("resetImageLists");
-  }
-});
-
-socket.on("connect_error", (err) => {
-  console.error("Error de conexión:", err.message);
-});
-
-socket.on("disconnect", () => {
-  console.log("Desconectado del servidor");
-});
-
-socket.on("playerData", handlePlayerData);
-
-socket.on("savePlayerName", async (data) => {
-  const { playerId, name } = data;
-  await savePlayerName(playerId, name);
-  sendPlayerData(socket);
-});
-
-socket.on("playerLinks", displayPlayerLinks);
-
-socket.on("resetComplete", () => {
-  console.log("Juego reseteado. Listo para empezar de nuevo.");
-});
 
 // Eventos del DOM
 document.getElementById("getPlayerLinks").addEventListener("click", () => {
@@ -202,3 +206,67 @@ document.getElementById("getPlayerLinks").addEventListener("click", () => {
 });
 
 document.getElementById("changingGameButton").addEventListener("click", handleSpinButton);
+
+//! Funcionalidades para la animación
+// Funcionalidades para precarga
+
+async function fetchImages() {
+  try {
+    const response = await fetch("/images");
+    const imageArray = await response.json();
+    preloadImages(imageArray);
+  } catch (error) {
+    console.error("Failed to fetch images:", error);
+  }
+}
+
+function preloadImages(imageArray) {
+  imageArray.forEach((imageName) => {
+    const img = new Image();
+    img.src = `/public/images/${imageName}`;
+  });
+}
+
+// Constantes para la animación
+const cardContainers = [
+  document.getElementById("cardContainer1"),
+  document.getElementById("cardContainer2"),
+  document.getElementById("cardContainer3"),
+  document.getElementById("cardContainer4"),
+];
+
+const cardNames = [
+  document.getElementById("cardName1"),
+  document.getElementById("cardName2"),
+  document.getElementById("cardName3"),
+  document.getElementById("cardName4"),
+];
+
+const audio = new Audio("/public/sounds/wheel.wav");
+audio.loop = true;
+
+async function spin(spinData, selectedImages) {
+  for (const name of cardNames) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    name.classList.add("blurCardName");
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  for (let i = 0; i < 4; i++) {
+    const formattedName = selectedImages[i]
+      .split(".")[0]
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+    cardNames[i].textContent = formattedName;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  for (const name of cardNames) {
+    name.classList.add("revealed");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    name.classList.remove("blurCardName");
+    name.classList.remove("revealed");
+  }
+}

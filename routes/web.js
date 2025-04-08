@@ -1,5 +1,6 @@
 import { Router } from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { readFile } from "fs/promises";
 import { getDatabase } from "../utils/db.js";
@@ -56,6 +57,21 @@ router.get("/player", isHostOrPlayer, (req, res) => {
 
 router.get("/sw.js", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "web", "public", "js", "sw.js"));
+});
+
+router.get("/images", (req, res) => {
+  const imageDir = path.join(__dirname, "..", "web", "public", "images");
+  fs.readdir(imageDir, (err, files) => {
+    if (err) {
+      console.error("Error leyendo el directorio de imágenes:", err);
+      return res.status(500).json({ error: "No se pudo leer las imágenes" });
+    }
+
+    const images = files.filter(
+      (file) => file !== "favicon.png" && file !== "LOGO.avif" && file !== "TC.avif" && file !== "GENERAL.avif"
+    );
+    res.json(images);
+  });
 });
 
 export default router;

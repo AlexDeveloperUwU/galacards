@@ -1,0 +1,8 @@
+.blurCardName {
+  filter: blur(6px);
+  transition: filter 0.5s;
+}
+
+.blurCardName.revealed {
+  filter: blur(0);
+}

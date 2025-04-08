@@ -25,7 +25,7 @@ async function fetchImages() {
     });
   } catch (error) {
     console.error("Failed to fetch images:", error);
-  }
+  }º
 }
 
 window.onload = () => {
