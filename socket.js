@@ -78,16 +78,25 @@ function handleSpin(socket) {
     return;
   }
 
+  let previousSelectedImages = db.data.game.lastSelectedImages;
+  if (!previousSelectedImages || previousSelectedImages.length === 0) {
+    previousSelectedImages = Array(4).fill("GENERAL.avif");
+  }
+
   const selectedImages = getRandomImages(remainingImages, 4);
-  const spinData = selectedImages.map((finalImage) => {
+
+  const spinData = selectedImages.map((finalImage, index) => {
     const fillerImages = getRandomImages(
       imageList.filter((img) => img !== finalImage),
-      14
+      15
     );
-    return [...fillerImages, finalImage];
+    fillerImages[0] = previousSelectedImages[index];
+    fillerImages.push(finalImage);
+    return fillerImages;
   });
 
   db.data.game.remainingImages = remainingImages.filter((img) => !selectedImages.includes(img));
+  db.data.game.lastSelectedImages = selectedImages;
   const hasMoreRounds = db.data.game.remainingImages.length >= 4;
 
   db.write().then(() => {
@@ -99,6 +108,7 @@ function handleSpin(socket) {
 function handleResetImageLists(socket) {
   const db = getDatabase();
   db.data.game.remainingImages = [...db.data.game.images];
+  db.data.game.lastSelectedImages = [];
   db.write().then(() => {
     socket.emit("resetComplete");
   });

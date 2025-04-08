@@ -189,10 +189,6 @@ function handleSpinButton() {
 
       await spin(spinData, selectedImages);
 
-      spinData.forEach((reelData, index) => {
-        console.log(`Jugador ${index + 1}:`, reelData);
-      });
-
       if (!hasMoreRounds) {
         button.textContent = "Reset";
       }
@@ -245,9 +241,20 @@ const cardNames = [
 const audio = new Audio("/public/sounds/wheel.wav");
 audio.loop = true;
 
+function createImageElement(imageName) {
+  const img = document.createElement("img");
+  img.src = `/public/images/${imageName}`;
+  img.classList.add("w-full");
+  img.classList.add("h-full");
+  img.classList.add("object-cover");
+  img.classList.add("rounded-2xl");
+  img.alt = imageName.split(".")[0];
+  return img;
+}
+
 async function spin(spinData, selectedImages) {
   for (const name of cardNames) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     name.classList.add("blurCardName");
   }
 
@@ -261,12 +268,99 @@ async function spin(spinData, selectedImages) {
     cardNames[i].textContent = formattedName;
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  const spinPromises = spinData.map((reelData, index) => {
+    const cardContainer = cardContainers[index];
+    return spinContainer(index, cardContainer, reelData);
+  });
+  await Promise.all(spinPromises);
 
   for (const name of cardNames) {
     name.classList.add("revealed");
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     name.classList.remove("blurCardName");
     name.classList.remove("revealed");
   }
+}
+
+async function spinContainer(cardContainerNumber, cardContainer, reelData) {
+  return new Promise((resolve) => {
+    const initialImage = document.getElementById(`cardGenerica${cardContainerNumber + 1}`);
+
+    const oldStrip = cardContainer.querySelector(".strip");
+    if (oldStrip) {
+      const lastImage = createImageElement(reelData[reelData.length - 1]);
+      lastImage.style.position = "absolute";
+      lastImage.style.top = "0";
+      lastImage.style.left = "0";
+      lastImage.style.width = "100%";
+      lastImage.style.height = "100%";
+      cardContainer.appendChild(lastImage);
+
+      oldStrip.remove();
+    }
+
+    let currentPosition = 0;
+    const totalImages = 16;
+    const imageHeight = initialImage.clientHeight;
+    const imageWidth = initialImage.clientWidth;
+    const totalHeight = totalImages * imageHeight;
+    const finalPosition = (totalImages - 1) * imageHeight;
+
+    // Crear el nuevo reel
+    const strip = document.createElement("div");
+    strip.style.width = `${imageWidth}px`;
+    strip.style.height = `${totalHeight}px`;
+    strip.className = "strip";
+    reelData.forEach((img) => {
+      const imgElement = createImageElement(img);
+      strip.appendChild(imgElement);
+    });
+
+    // Eliminar la imagen temporal si existe
+    const tempImage = cardContainer.querySelector("img:not(.strip img)");
+    if (tempImage && tempImage.id !== `cardGenerica${cardContainerNumber + 1}`) {
+      tempImage.remove();
+    }
+
+    cardContainer.appendChild(strip);
+    initialImage.style.opacity = "0";
+    initialImage.style.position = "absolute";
+
+    audio.volume = 1.0;
+    audio.play();
+
+    function animateReel() {
+      currentPosition += imageHeight / 5;
+      if (currentPosition >= totalHeight) {
+        currentPosition = 0;
+      }
+
+      strip.style.transform = `translateY(-${currentPosition}px)`;
+
+      if (currentPosition >= finalPosition - imageHeight && currentPosition <= finalPosition) {
+        strip.style.transition = "transform 0.6s ease-out";
+        strip.style.transform = `translateY(-${finalPosition}px)`;
+        setTimeout(() => {
+          strip.style.transition = "none";
+          strip.style.transform = `translateY(-${finalPosition}px)`;
+          const fadeOutInterval = setInterval(() => {
+            if (audio.volume > 0.1) {
+              audio.volume -= 0.1;
+            } else {
+              audio.volume = 0.0;
+              clearInterval(fadeOutInterval);
+            }
+          }, 100);
+          setTimeout(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }, 600);
+          resolve();
+        }, 600);
+      } else {
+        requestAnimationFrame(animateReel);
+      }
+    }
+    animateReel();
+  });
 }

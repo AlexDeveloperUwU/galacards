@@ -1,8 +1,14 @@
 .blurCardName {
   filter: blur(6px);
-  transition: filter 0.5s;
+  transition: filter 0.4s;
 }
 
 .blurCardName.revealed {
   filter: blur(0);
+}
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  object-fit: cover;
 }

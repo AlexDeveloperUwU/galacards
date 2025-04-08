@@ -13,6 +13,9 @@ let db;
 // Inicializar la base de datos
 export async function initializeDatabase() {
   db = await JSONFilePreset(dbFile, defaultData);
+  if (!db.data.game.lastSelectedImages) {
+    db.data.game.lastSelectedImages = [];
+  }
 }
 
 // Obtener la instancia de la base de datos
@@ -63,11 +66,13 @@ export async function generateImageArray() {
       console.error("Error leyendo el directorio de imágenes:", err);
       return res.status(500).json({ error: "No se pudo leer las imágenes" });
     }
-
-    const images = files.filter((file) => file !== "favicon.png" && file !== "LOGO.avif" && file !== "TC.avif" && file !== "GENERAL.avif");
+    const images = files.filter(
+      (file) => file !== "favicon.png" && file !== "LOGO.avif" && file !== "TC.avif" && file !== "GENERAL.avif"
+    );
     db.data.game.images = images;
     db.data.game.remainingImages = [...images];
   });
+  await db.write();
 }
 
 export async function deleteUsedImages(usedImages) {
