@@ -93,7 +93,7 @@ export function getGameState() {
   return {
     lastSelectedImages: db.data.game.lastSelectedImages || [],
     remainingImages: db.data.game.remainingImages || [],
-    currentRound: db.data.game.currentRound || 1,
+    currentRound: db.data.game.currentRound || 0,
     totalRounds: db.data.game.totalRounds || 0
   };
 }

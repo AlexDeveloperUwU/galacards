@@ -45,6 +45,7 @@ socket.on("player:links", displayPlayerLinks);
 
 socket.on("game:resetComplete", () => {
   console.log("Juego reseteado. Listo para empezar de nuevo.");
+  handleResetGame();
 });
 
 socket.on("game:state", (gameState) => {
@@ -194,9 +195,6 @@ function handleSpinButton() {
       }
 
       const { spinData, selectedImages, hasMoreRounds } = data;
-      console.log("Spin data:", spinData);
-      console.log("Selected images:", selectedImages);
-      console.log("Has more rounds:", hasMoreRounds);
 
       await spin(spinData, selectedImages);
 
@@ -231,6 +229,52 @@ function handleGameState(gameState) {
         .replace(/\b\w/g, (char) => char.toUpperCase());
       cardNames[index].textContent = formattedName;
     });
+  }
+}
+
+async function handleResetGame() {
+  for (const name of cardNames) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    name.classList.add("blurCardName");
+  }
+
+  await Promise.all(
+    cardContainers.map((container, index) => {
+      return new Promise((resolve) => {
+        const images = container.querySelectorAll("img:not(#cardGenerica" + (index + 1) + ")");
+        const genericImage = document.getElementById(`cardGenerica${index + 1}`);
+
+        genericImage.style.position = "relative";
+        genericImage.style.opacity = "1";
+        genericImage.classList.add("crossfade-enter");
+
+        images.forEach((img) => {
+          img.classList.add("crossfade-exit");
+          img.classList.add("crossfade-exit-active");
+        });
+
+        setTimeout(() => {
+          images.forEach((img) => img.remove());
+          genericImage.classList.add("crossfade-enter-active");
+
+          setTimeout(() => {
+            genericImage.classList.remove("crossfade-enter", "crossfade-enter-active");
+            resolve();
+          }, 600);
+        }, 600);
+      });
+    })
+  );
+
+  cardNames.forEach((name, index) => {
+    name.textContent = ["¿Conseguirás", "adivinar", "quién", "eres?"][index];
+  });
+
+  for (const name of cardNames) {
+    name.classList.add("revealed");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    name.classList.remove("blurCardName");
+    name.classList.remove("revealed");
   }
 }
 
