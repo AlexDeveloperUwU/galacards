@@ -142,6 +142,7 @@ function handleSpin(socket) {
 
   const currentRound = (db.data.game.currentRound || 0) + 1;
   const totalRounds = Math.ceil(imageList.length / 4);
+  
   updateGameRound(currentRound, totalRounds).then(() => {
     socket.emit("game:spinResult", { spinData, selectedImages, hasMoreRounds });
     socket.emit("game:round", {

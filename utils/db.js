@@ -105,17 +105,19 @@ export async function updateGameRound(currentRound, totalRounds) {
   await db.write();
 }
 
-// Obtener puntuación de un jugador específico
 export function getPlayerScore(playerId) {
   const player = db.data.players.find((p) => p.id === playerId);
   return player ? player.score : 0;
 }
 
-// Obtener puntuaciones de todos los jugadores
 export function getAllPlayerScores() {
-  return db.data.players.map(({ id, name, score }) => ({ id, name, score: score || 0 }));
+  return db.data.players.map(({ id, name, score }) => ({
+    id,
+    name,
+    score: typeof score === "object" ? score.score || 0 : score || 0,
+  }));
 }
-// Establecer puntuación para un jugador específico sumando a la actual
+
 export async function setPlayerScore(playerId, scoreToAdd) {
   const player = db.data.players.find((p) => p.id === playerId);
   if (player) {
@@ -127,13 +129,9 @@ export async function setPlayerScore(playerId, scoreToAdd) {
   return false;
 }
 
-// Establecer puntuación para todos los jugadores
-export async function setAllPlayerScores(scores) {
-  for (const { id, score } of scores) {
-    const player = db.data.players.find((p) => p.id === id);
-    if (player) {
-      player.score = score;
-    }
+export async function setAllPlayerScores(score) {
+  for (const player of db.data.players) {
+    player.score = score;
   }
   await db.write();
 }

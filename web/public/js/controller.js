@@ -66,6 +66,7 @@ socket.on("score:update", (data) => {
 
 // Funciones auxiliares
 function updateScoreboard(scores) {
+  console.log("Recibido scoreboard:", scores);
   const pointsContainer = document.getElementById("pointsContainer");
   const scoreHtml = scores
     .filter((player) => player.id !== hostId)
@@ -74,7 +75,7 @@ function updateScoreboard(scores) {
         <div class="bg-purple-bg bg-opacity-50 rounded-lg p-2">
           <p class="text-white text-sm">
             ${player.name}: 
-            <span id="score-${player.id}" class="font-bold text-purple-light">${player.score}</span>
+            <span id="score-${player.id}" class="font-bold text-purple-light score-update">${player.score}</span>
           </p>
         </div>
       `
@@ -82,16 +83,25 @@ function updateScoreboard(scores) {
     .join("");
 
   pointsContainer.innerHTML = scoreHtml;
+
+  scores.forEach((player) => {
+    const scoreElement = document.getElementById(`score-${player.id}`);
+    if (scoreElement) {
+      setTimeout(() => {
+        scoreElement.classList.remove("score-update");
+      }, 500);
+    }
+  });
 }
 
 function updatePlayerScore(playerId, score) {
   const scoreElement = document.getElementById(`score-${playerId}`);
   if (scoreElement) {
     scoreElement.textContent = score;
-    
-    scoreElement.classList.add('score-update');
+
+    scoreElement.classList.add("score-update");
     setTimeout(() => {
-      scoreElement.classList.remove('score-update');
+      scoreElement.classList.remove("score-update");
     }, 500);
   }
 }
