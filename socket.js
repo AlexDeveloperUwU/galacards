@@ -47,7 +47,7 @@ async function registerSocketHandlers(socket, io) {
     sendPlayerData(socket);
   });
   socket.on("game:spin", () => handleSpin(socket));
-  socket.on("game:reset", () => handleResetImageLists(socket));
+  socket.on("game:reset", () => handleResettingGame(socket));
   socket.on("disconnect", () => console.log("Cliente desconectado:", socket.id));
 
   // Manejadores para puntuaciones
@@ -153,15 +153,18 @@ function handleSpin(socket) {
   });
 }
 
-// Manejar el evento "resetImageLists"
-function handleResetImageLists(socket) {
+// Manejar el evento "handleResettingGame"
+async function handleResettingGame(socket) {
   const db = getDatabase();
   db.data.game.remainingImages = [...db.data.game.images];
   db.data.game.lastSelectedImages = [];
   db.data.game.currentRound = 0;
   db.data.game.totalRounds = Math.ceil(db.data.game.images.length / 4);
+  await setAllPlayerScores(0);
+  const updatedScores = getAllPlayerScores();
   db.write().then(() => {
     socket.emit("game:resetComplete");
+    socket.emit("score:updateAll", updatedScores);
     socket.emit("game:round", {
       currentRound: 0,
       remainingCards: db.data.game.images.length,

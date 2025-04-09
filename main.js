@@ -50,6 +50,16 @@ await initializeDatabase();
 if (process.argv.includes("resetData")) {
   await generatePlayerData(config.gameUrl, nanoid);
   await generateImageArray();
+
+  const db = getDatabase();
+  db.data.game.currentRound = 0;
+  db.data.game.totalRounds = Math.ceil(db.data.game.images.length / 4);
+  await setAllPlayerScores(0);
+  const updatedScores = getAllPlayerScores();
+  db.write().then(() => {
+    console.log("Game data has been reset.");
+    console.log("Scores have been updated:", updatedScores);
+  });
 }
 
 // Obtener el ID del host desde la base de datos
