@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import { initializeDatabase, getDatabase, savePlayerName } from "./utils/db.js";
+import { initializeDatabase, getDatabase, savePlayerName, getGameState, updateGameRound } from "./utils/db.js";
 
 //! Inicialización del Socket
 async function initializeSocket(server) {
@@ -39,14 +39,15 @@ function authenticateSocket(socket, next) {
 async function registerSocketHandlers(socket) {
   const playerId = socket.playerId;
 
-  socket.on("getPlayerData", () => sendPlayerData(socket));
-  socket.on("getPlayerLinks", () => sendPlayerLinks(socket));
-  socket.on("savePlayerName", async (data) => {
+  socket.on("player:getData", () => sendPlayerData(socket));
+  socket.on("player:getLinks", () => sendPlayerLinks(socket));
+  socket.on("game:getState", () => sendGameState(socket));
+  socket.on("player:updateName", async (data) => {
     await savePlayerName(playerId, data.name);
     sendPlayerData(socket);
   });
-  socket.on("spin", () => handleSpin(socket));
-  socket.on("resetImageLists", () => handleResetImageLists(socket));
+  socket.on("game:spin", () => handleSpin(socket));
+  socket.on("game:reset", () => handleResetImageLists(socket));
   socket.on("disconnect", () => console.log("Cliente desconectado:", socket.id));
 }
 
@@ -56,7 +57,7 @@ async function registerSocketHandlers(socket) {
 async function sendPlayerData(socket) {
   const db = getDatabase();
   const players = db.data.players;
-  socket.emit("playerData", players);
+  socket.emit("player:data", players);
 }
 
 // Enviar enlaces de los jugadores al cliente
@@ -64,7 +65,23 @@ function sendPlayerLinks(socket) {
   const db = getDatabase();
   const players = db.data.players || [];
   const playerLinks = players.map(({ name, vdoUrl, gameUrl }) => ({ name, vdoUrl, gameUrl }));
-  socket.emit("playerLinks", playerLinks);
+  socket.emit("player:links", playerLinks);
+}
+
+// Enviar el estado del juego al cliente
+function sendGameState(socket) {
+  const gameState = getGameState();
+  socket.emit("game:state", gameState);
+
+  const db = getDatabase();
+  const imageList = db.data.game.images || [];
+  const currentRound = (db.data.game.currentRound || 0);
+  const totalRounds = Math.ceil(imageList.length / 4);
+  socket.emit("game:round", {
+    currentRound,
+    remainingCards: db.data.game.remainingImages.length,
+    totalRounds,
+  });
 }
 
 // Manejar el evento "spin"
@@ -74,7 +91,7 @@ function handleSpin(socket) {
   const remainingImages = db.data.game.remainingImages;
 
   if (remainingImages.length < 4) {
-    socket.emit("spinResult", { error: "No hay suficientes imágenes restantes." });
+    socket.emit("game:spinResult", { error: "No hay suficientes imágenes restantes." });
     return;
   }
 
@@ -99,8 +116,15 @@ function handleSpin(socket) {
   db.data.game.lastSelectedImages = selectedImages;
   const hasMoreRounds = db.data.game.remainingImages.length >= 4;
 
-  db.write().then(() => {
-    socket.emit("spinResult", { spinData, selectedImages, hasMoreRounds });
+  const currentRound = (db.data.game.currentRound || 0) + 1;
+  const totalRounds = Math.ceil(imageList.length / 4);
+  updateGameRound(currentRound, totalRounds).then(() => {
+    socket.emit("game:spinResult", { spinData, selectedImages, hasMoreRounds });
+    socket.emit("game:round", {
+      currentRound,
+      remainingCards: db.data.game.remainingImages.length,
+      totalRounds,
+    });
   });
 }
 
@@ -109,8 +133,15 @@ function handleResetImageLists(socket) {
   const db = getDatabase();
   db.data.game.remainingImages = [...db.data.game.images];
   db.data.game.lastSelectedImages = [];
+  db.data.game.currentRound = 0;
+  db.data.game.totalRounds = Math.ceil(db.data.game.images.length / 4);
   db.write().then(() => {
-    socket.emit("resetComplete");
+    socket.emit("game:resetComplete");
+    socket.emit("game:round", {
+      currentRound: 0,
+      remainingCards: db.data.game.images.length,
+      totalRounds: Math.ceil(db.data.game.images.length / 4),
+    });
   });
 }
 

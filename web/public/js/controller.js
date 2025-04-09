@@ -7,6 +7,7 @@ const isDevMode = queryParams.get("dev") === "true";
 
 window.onload = () => {
   fetchImages();
+  socket.emit("game:getState");
 };
 
 const socket = io(window.location.host, {
@@ -18,9 +19,9 @@ let hostId = null;
 // Eventos del socket
 socket.on("connect", () => {
   console.log("Conectado al servidor con ID:", playerId);
-  socket.emit("getPlayerData");
+  socket.emit("player:getData");
   if (isDevMode) {
-    socket.emit("resetImageLists");
+    socket.emit("game:reset");
   }
 });
 
@@ -32,18 +33,28 @@ socket.on("disconnect", () => {
   console.log("Desconectado del servidor");
 });
 
-socket.on("playerData", handlePlayerData);
+socket.on("player:data", handlePlayerData);
 
-socket.on("savePlayerName", async (data) => {
+socket.on("player:nameUpdated", async (data) => {
   const { playerId, name } = data;
   await savePlayerName(playerId, name);
   sendPlayerData(socket);
 });
 
-socket.on("playerLinks", displayPlayerLinks);
+socket.on("player:links", displayPlayerLinks);
 
-socket.on("resetComplete", () => {
+socket.on("game:resetComplete", () => {
   console.log("Juego reseteado. Listo para empezar de nuevo.");
+});
+
+socket.on("game:state", (gameState) => {
+  handleGameState(gameState);
+});
+
+socket.on("game:round", (data) => {
+  const { currentRound, remainingCards, totalRounds } = data;
+  document.getElementById("avaliableCards").textContent = remainingCards;
+  document.getElementById("roundNumber").textContent = `${currentRound}/${totalRounds}`;
 });
 
 // Funciones auxiliares
@@ -95,7 +106,7 @@ function promptForHostName() {
     },
   }).then((result) => {
     if (result.isConfirmed) {
-      socket.emit("savePlayerName", { playerId: hostId, name: result.value });
+      socket.emit("player:updateName", { playerId: hostId, name: result.value });
     }
   });
 }
@@ -168,15 +179,15 @@ function handleSpinButton() {
   const button = document.getElementById("changingGameButton");
 
   if (button.textContent === "Reset") {
-    socket.emit("resetImageLists");
+    socket.emit("game:reset");
     button.textContent = "¡Girar!";
   } else {
-    socket.emit("spin");
+    socket.emit("game:spin");
 
     // Lo desactivamos para que no se repita el evento
-    socket.off("spinResult");
+    socket.off("game:spinResult");
 
-    socket.on("spinResult", async (data) => {
+    socket.on("game:spinResult", async (data) => {
       if (data.error) {
         console.error(data.error);
         return;
@@ -196,9 +207,36 @@ function handleSpinButton() {
   }
 }
 
+function handleGameState(gameState) {
+  const { lastSelectedImages } = gameState;
+  if (lastSelectedImages && lastSelectedImages.length === 4) {
+    lastSelectedImages.forEach((imageName, index) => {
+      const cardContainer = cardContainers[index];
+      const initialImage = document.getElementById(`cardGenerica${index + 1}`);
+
+      initialImage.style.opacity = "0";
+      initialImage.style.position = "absolute";
+
+      const currentImage = createImageElement(imageName);
+      currentImage.style.position = "absolute";
+      currentImage.style.top = "0";
+      currentImage.style.left = "0";
+      currentImage.style.width = "100%";
+      currentImage.style.height = "100%";
+      cardContainer.appendChild(currentImage);
+
+      const formattedName = imageName
+        .split(".")[0]
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+      cardNames[index].textContent = formattedName;
+    });
+  }
+}
+
 // Eventos del DOM
 document.getElementById("getPlayerLinks").addEventListener("click", () => {
-  socket.emit("getPlayerLinks");
+  socket.emit("player:getLinks");
 });
 
 document.getElementById("changingGameButton").addEventListener("click", handleSpinButton);
@@ -306,7 +344,6 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
     const totalHeight = totalImages * imageHeight;
     const finalPosition = (totalImages - 1) * imageHeight;
 
-    // Crear el nuevo reel
     const strip = document.createElement("div");
     strip.style.width = `${imageWidth}px`;
     strip.style.height = `${totalHeight}px`;
@@ -316,7 +353,6 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
       strip.appendChild(imgElement);
     });
 
-    // Eliminar la imagen temporal si existe
     const tempImage = cardContainer.querySelector("img:not(.strip img)");
     if (tempImage && tempImage.id !== `cardGenerica${cardContainerNumber + 1}`) {
       tempImage.remove();
