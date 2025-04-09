@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import { initializeDatabase, getDatabase, savePlayerName, getGameState, updateGameRound } from "./utils/db.js";
+import { initializeDatabase, getDatabase, savePlayerName, getGameState, updateGameRound, getPlayerScore, getAllPlayerScores, setPlayerScore, setAllPlayerScores } from "./utils/db.js";
 
 //! Inicialización del Socket
 async function initializeSocket(server) {
@@ -9,7 +9,7 @@ async function initializeSocket(server) {
   io.use(authenticateSocket);
   io.on("connection", (socket) => {
     console.log(`Cliente autenticado. Socket ID: ${socket.id} Player ID: ${socket.playerId}`);
-    registerSocketHandlers(socket);
+    registerSocketHandlers(socket, io);
   });
 }
 
@@ -36,7 +36,7 @@ function authenticateSocket(socket, next) {
 }
 
 //! Registro de eventos del Socket
-async function registerSocketHandlers(socket) {
+async function registerSocketHandlers(socket, io) {
   const playerId = socket.playerId;
 
   socket.on("player:getData", () => sendPlayerData(socket));
@@ -49,6 +49,30 @@ async function registerSocketHandlers(socket) {
   socket.on("game:spin", () => handleSpin(socket));
   socket.on("game:reset", () => handleResetImageLists(socket));
   socket.on("disconnect", () => console.log("Cliente desconectado:", socket.id));
+
+  // Manejadores para puntuaciones
+  socket.on("score:get", ({ playerId: targetId }) => {
+    const score = getPlayerScore(targetId || playerId);
+    socket.emit("score:update", { playerId: targetId || playerId, score });
+  });
+
+  socket.on("score:getAll", () => {
+    const scores = getAllPlayerScores();
+    socket.emit("score:updateAll", scores);
+  });
+
+  socket.on("score:set", async ({ playerId: targetId, score }) => {
+    if (await setPlayerScore(targetId || playerId, score)) {
+      const updatedScore = getPlayerScore(targetId || playerId);
+      io.emit("score:update", { playerId: targetId || playerId, score: updatedScore });
+    }
+  });
+
+  socket.on("score:setAll", async (scores) => {
+    await setAllPlayerScores(scores);
+    const updatedScores = getAllPlayerScores();
+    io.emit("score:updateAll", updatedScores);
+  });
 }
 
 //! Funciones auxiliares para eventos del Socket

@@ -58,11 +58,55 @@ socket.on("game:round", (data) => {
   document.getElementById("roundNumber").textContent = `${currentRound}/${totalRounds}`;
 });
 
+socket.on("score:updateAll", updateScoreboard);
+socket.on("score:update", (data) => {
+  const { playerId, score } = data;
+  updatePlayerScore(playerId, score);
+});
+
 // Funciones auxiliares
+function updateScoreboard(scores) {
+  const pointsContainer = document.getElementById("pointsContainer");
+  const scoreHtml = scores
+    .filter((player) => player.id !== hostId)
+    .map(
+      (player) => `
+        <div class="bg-purple-bg bg-opacity-50 rounded-lg p-2">
+          <p class="text-white text-sm">
+            ${player.name}: 
+            <span id="score-${player.id}" class="font-bold text-purple-light">${player.score}</span>
+          </p>
+        </div>
+      `
+    )
+    .join("");
+
+  pointsContainer.innerHTML = scoreHtml;
+}
+
+function updatePlayerScore(playerId, score) {
+  const scoreElement = document.getElementById(`score-${playerId}`);
+  if (scoreElement) {
+    scoreElement.textContent = score;
+    
+    scoreElement.classList.add('score-update');
+    setTimeout(() => {
+      scoreElement.classList.remove('score-update');
+    }, 500);
+  }
+}
+
 function handlePlayerData(players) {
   console.log("Recibido playerData:", players);
   if (players.length > 0) {
     hostId = players[0]?.id;
+
+    const hostIframe = document.getElementById("hostIframe");
+    const hostName = document.getElementById("hostName");
+    if (hostIframe && hostName) {
+      hostIframe.src = `https://vdo.ninja/?view=${hostId}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+      hostName.textContent = players[0]?.name || "Pulpo a la gallega";
+    }
 
     if (players[0]?.name === "Host") {
       promptForHostName();
@@ -70,6 +114,8 @@ function handlePlayerData(players) {
 
     updatePlayerFrames(players.slice(1));
   }
+
+  socket.emit("score:getAll");
 }
 
 function promptForHostName() {
@@ -232,52 +278,6 @@ function handleGameState(gameState) {
   }
 }
 
-async function handleResetGame() {
-  for (const name of cardNames) {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    name.classList.add("blurCardName");
-  }
-
-  await Promise.all(
-    cardContainers.map((container, index) => {
-      return new Promise((resolve) => {
-        const images = container.querySelectorAll("img:not(#cardGenerica" + (index + 1) + ")");
-        const genericImage = document.getElementById(`cardGenerica${index + 1}`);
-
-        genericImage.style.position = "relative";
-        genericImage.style.opacity = "1";
-        genericImage.classList.add("crossfade-enter");
-
-        images.forEach((img) => {
-          img.classList.add("crossfade-exit");
-          img.classList.add("crossfade-exit-active");
-        });
-
-        setTimeout(() => {
-          images.forEach((img) => img.remove());
-          genericImage.classList.add("crossfade-enter-active");
-
-          setTimeout(() => {
-            genericImage.classList.remove("crossfade-enter", "crossfade-enter-active");
-            resolve();
-          }, 600);
-        }, 600);
-      });
-    })
-  );
-
-  cardNames.forEach((name, index) => {
-    name.textContent = ["¿Conseguirás", "adivinar", "quién", "eres?"][index];
-  });
-
-  for (const name of cardNames) {
-    name.classList.add("revealed");
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    name.classList.remove("blurCardName");
-    name.classList.remove("revealed");
-  }
-}
-
 // Eventos del DOM
 document.getElementById("getPlayerLinks").addEventListener("click", () => {
   socket.emit("player:getLinks");
@@ -335,6 +335,9 @@ function createImageElement(imageName) {
 }
 
 async function spin(spinData, selectedImages) {
+  const button = document.getElementById("changingGameButton");
+  button.setAttribute("disabled", "true");
+
   for (const name of cardNames) {
     await new Promise((resolve) => setTimeout(resolve, 400));
     name.classList.add("blurCardName");
@@ -362,6 +365,8 @@ async function spin(spinData, selectedImages) {
     name.classList.remove("blurCardName");
     name.classList.remove("revealed");
   }
+
+  button.removeAttribute("disabled");
 }
 
 async function spinContainer(cardContainerNumber, cardContainer, reelData) {
@@ -443,4 +448,55 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
     }
     animateReel();
   });
+}
+
+async function handleResetGame() {
+  const button = document.getElementById("changingGameButton");
+  button.setAttribute("disabled", "true");
+
+  for (const name of cardNames) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    name.classList.add("blurCardName");
+  }
+
+  await Promise.all(
+    cardContainers.map((container, index) => {
+      return new Promise((resolve) => {
+        const images = container.querySelectorAll("img:not(#cardGenerica" + (index + 1) + ")");
+        const genericImage = document.getElementById(`cardGenerica${index + 1}`);
+
+        genericImage.style.position = "relative";
+        genericImage.style.opacity = "1";
+        genericImage.classList.add("crossfade-enter");
+
+        images.forEach((img) => {
+          img.classList.add("crossfade-exit");
+          img.classList.add("crossfade-exit-active");
+        });
+
+        setTimeout(() => {
+          images.forEach((img) => img.remove());
+          genericImage.classList.add("crossfade-enter-active");
+
+          setTimeout(() => {
+            genericImage.classList.remove("crossfade-enter", "crossfade-enter-active");
+            resolve();
+          }, 600);
+        }, 600);
+      });
+    })
+  );
+
+  cardNames.forEach((name, index) => {
+    name.textContent = ["¿Conseguirás", "adivinar", "quién", "eres?"][index];
+  });
+
+  for (const name of cardNames) {
+    name.classList.add("revealed");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    name.classList.remove("blurCardName");
+    name.classList.remove("revealed");
+  }
+
+  button.removeAttribute("disabled");
 }

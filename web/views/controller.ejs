@@ -13,7 +13,7 @@
   <h1 class="text-5xl md:text-6xl text-white font-bold mb-10 animate-glow tracking-wider">¿Quién soy?</h1>
 
   <div class="w-full max-w-7xl mx-auto rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm bg-opacity-90 bg-purple-bg">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 p-6 md:p-8 bg-purple-bg">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6 p-6 md:p-8 bg-purple-bg">
 
       <div class="w-full flex flex-col items-center">
         <span id="cardName1" class="text-white text-base font-bold mb-4 animate-glow">¿Conseguirás</span>
@@ -47,6 +47,17 @@
         <div class="w-full h-0 pb-[133.33%] relative">
           <div id="cardContainer4" class="absolute inset-0 rounded-2xl bg-purple-card border-2 border-purple-light shadow-card transition-all duration-300 flex justify-center transform overflow-hidden">
             <img id="cardGenerica4" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl">
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full flex flex-col items-center">
+        <span class="text-transparent text-base font-bold mb-4">&nbsp;</span>
+        <div class="w-full h-0 pb-[133.33%] relative">
+          <div class="absolute inset-0 rounded-2xl bg-purple-medium border-2 border-purple-light shadow-card flex flex-col items-center justify-start p-4">
+            <h3 class="text-2xl text-purple-light font-bold mb-3 border-b-2 border-purple-light w-full text-center">Puntos</h3>
+            <div class="text-center space-y-1 w-full overflow-y-auto scrollbar-hide" id="pointsContainer">
+            </div>
           </div>
         </div>
       </div>
@@ -98,10 +109,17 @@
 
       <div class="w-full flex flex-col items-center">
         <div class="w-full h-0 pb-[133.33%] relative">
+          <iframe class="absolute inset-0 w-full h-full rounded-2xl border-2 border-purple-light shadow-card hover:shadow-glow transition-all duration-300 transform hover:scale-[1.02] cursor-pointer" style="background-color: transparent;" src="" id="hostIframe"></iframe>
+        </div>
+        <span id="hostName" class="text-white text-base font-bold animate-glow mt-4">Host</span>
+      </div>
+
+      <div class="w-full flex flex-col items-center">
+        <div class="w-full h-0 pb-[133.33%] relative">
           <div class="absolute inset-0 rounded-2xl bg-purple-medium border-2 border-purple-light shadow-card flex flex-col items-center justify-center p-6">
             <h3 class="text-2xl text-purple-light font-bold mb-6 border-b-2 border-purple-light pb-2 w-full text-center">Controles</h3>
             <div class="space-y-3 w-full">
-              <button class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md transform hover:translate-y-[-2px]" id="changingGameButton">
+              <button class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg transition-colors duration-300 shadow-md transform disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:translate-y-0 enabled:hover:bg-purple-hover enabled:hover:translate-y-[-2px]" id="changingGameButton">
                 ¡Girar!
               </button>
               <button id="getPlayerLinks" class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md transform hover:translate-y-[-2px]">
