@@ -19,7 +19,7 @@
         <span id="cardName1" class="text-white text-base font-bold mb-4 animate-glow">¿Conseguirás</span>
         <div class="w-full h-0 pb-[133.33%] relative">
           <div id="cardContainer1" class="absolute inset-0 rounded-2xl bg-purple-card border-2 border-purple-light shadow-card transition-all duration-300 flex justify-center transform overflow-hidden">
-            <img id="cardGenerica1" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl">
+            <img id="cardGenerica1" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl" style="position: relative; opacity: 1; z-index: 1;">
           </div>
         </div>
       </div>
@@ -28,7 +28,7 @@
         <span id="cardName2" class="text-white text-base font-bold mb-4 animate-glow">adivinar</span>
         <div class="w-full h-0 pb-[133.33%] relative">
           <div id="cardContainer2" class="absolute inset-0 rounded-2xl bg-purple-card border-2 border-purple-light shadow-card transition-all duration-300 flex justify-center transform overflow-hidden">
-            <img id="cardGenerica2" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl">
+            <img id="cardGenerica2" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl" style="position: relative; opacity: 1; z-index: 1;">
           </div>
         </div>
       </div>
@@ -37,7 +37,7 @@
         <span id="cardName3" class="text-white text-base font-bold mb-4 animate-glow">quién</span>
         <div class="w-full h-0 pb-[133.33%] relative">
           <div id="cardContainer3" class="absolute inset-0 rounded-2xl bg-purple-card border-2 border-purple-light shadow-card transition-all duration-300 flex justify-center transform overflow-hidden">
-            <img id="cardGenerica3" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl">
+            <img id="cardGenerica3" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl" style="position: relative; opacity: 1; z-index: 1;">
           </div>
         </div>
       </div>
@@ -46,7 +46,7 @@
         <span id="cardName4" class="text-white text-base font-bold mb-4 animate-glow">eres?</span>
         <div class="w-full h-0 pb-[133.33%] relative">
           <div id="cardContainer4" class="absolute inset-0 rounded-2xl bg-purple-card border-2 border-purple-light shadow-card transition-all duration-300 flex justify-center transform overflow-hidden">
-            <img id="cardGenerica4" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl">
+            <img id="cardGenerica4" src="/public/images/GENERAL.avif" alt="Card genérica" class="w-full h-full object-cover rounded-2xl" style="position: relative; opacity: 1; z-index: 1;">
           </div>
         </div>
       </div>
@@ -72,7 +72,7 @@
                 <p class="text-white">Restante: <span class="font-bold text-purple-light" id="avaliableCards">0</span></p>
               </div>
               <div class="bg-purple-bg bg-opacity-50 rounded-lg p-3">
-                <p class="text-white">Ronda: <span class="font-bold text-purple-light" id="roundNumber">0</span></p>
+                <p class="text-white">Ronda: <span class="font-bold text-purple-light" id="roundNumber">0</span>/<span class="font-bold text-purple-light" id="totalRounds">0</span></p>
               </div>
             </div>
           </div>
@@ -119,11 +119,14 @@
           <div class="absolute inset-0 rounded-2xl bg-purple-medium border-2 border-purple-light shadow-card flex flex-col items-center justify-center p-6">
             <h3 class="text-2xl text-purple-light font-bold mb-6 border-b-2 border-purple-light pb-2 w-full text-center">Controles</h3>
             <div class="space-y-3 w-full">
-              <button class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg transition-colors duration-300 shadow-md transform disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:translate-y-0 enabled:hover:bg-purple-hover enabled:hover:translate-y-[-2px]" id="changingGameButton">
-                ¡Girar!
+              <button class="w-full py-2 bg-purple-light text-purple-dark text-base font-bold rounded-lg transition-colors duration-300 shadow-md transform disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:translate-y-0 enabled:hover:bg-purple-hover enabled:hover:translate-y-[-2px]" id="spinButton">
+                Spin!
               </button>
-              <button id="getPlayerLinks" class="w-full py-3 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md transform hover:translate-y-[-2px]">
-                Obtener links
+              <button class="w-full py-2 bg-purple-light text-purple-dark text-base font-bold rounded-lg transition-colors duration-300 shadow-md transform disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:translate-y-0 enabled:hover:bg-purple-hover enabled:hover:translate-y-[-2px]" id="turnButton">
+                Turno
+              </button>
+              <button id="getPlayerLinks" class="w-full py-2 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md transform hover:translate-y-[-2px]">
+                Ver links
               </button>
             </div>
           </div>

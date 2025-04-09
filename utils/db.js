@@ -2,26 +2,43 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { JSONFilePreset } from "lowdb/node";
 import fs from "fs";
+import { nanoid } from "nanoid";
+
+////////////////////////////////////////////////////
+//
+// Sección de configuración y constantes
+//
+///////////////////////////////////////////////////
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const dbFile = path.join(__dirname, "..", "data", "db.json");
+const imageDir = path.join(__dirname, "..", "web", "public", "images");
+
 const defaultData = {
   players: [],
   game: {
-    currentRound: 0,
+    gameState: "",
+    images: [],
+    remainingImages: [],
+    selectedImages: [],
     totalRounds: 0,
+    currentRound: 0,
+    currentPlayer: null,
   },
 };
 let db;
 
+////////////////////////////////////////////////////
+//
+// Sección de básicos de la base de datos
+//
+///////////////////////////////////////////////////
+
 // Inicializar la base de datos
 export async function initializeDatabase() {
   db = await JSONFilePreset(dbFile, defaultData);
-  if (!db.data.game.lastSelectedImages) {
-    db.data.game.lastSelectedImages = [];
-  }
 }
 
 // Obtener la instancia de la base de datos
@@ -29,23 +46,27 @@ export function getDatabase() {
   return db;
 }
 
-// Guardar el nombre del jugador
-export async function savePlayerName(playerId, name) {
-  const player = db.data.players.find((p) => p.id === playerId);
-  if (player) {
-    player.name = name;
-    await db.write();
-  }
+////////////////////////////////////////////////////
+//
+// Sección de preparación y reset de la database
+//
+///////////////////////////////////////////////////
+
+// Función para resetear todo el juego
+export async function resetApp(gameBaseUrl) {
+  await generateGameData();
+  await generatePlayerData(gameBaseUrl);
 }
 
-// Generar datos de jugadores
-export async function generatePlayerData(gameBaseUrl, nanoid) {
+// Función para generar los datos de los jugadores
+async function generatePlayerData(gameBaseUrl) {
   db.data.players = [];
   const hostId = nanoid(8);
+
   const host = {
     id: hostId,
     vdoUrl: `https://vdo.ninja/?push=${hostId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&autostart&device=1&room=glykroompush`,
-    name: "Host",
+    name: "Pulpo a la gallega",
   };
   db.data.players.push(host);
 
@@ -62,71 +83,101 @@ export async function generatePlayerData(gameBaseUrl, nanoid) {
   }
 
   await db.write();
-  console.log("Datos de jugadores generados.");
 }
 
-export async function generateImageArray() {
-  const imageDir = path.join(__dirname, "..", "web", "public", "images");
-  fs.readdir(imageDir, (err, files) => {
-    if (err) {
-      console.error("Error leyendo el directorio de imágenes:", err);
-      return res.status(500).json({ error: "No se pudo leer las imágenes" });
-    }
+// Función para generar los datos del juego
+// También servirá para reiniciar el juego
+export async function generateGameData() {
+  try {
+    const files = await fs.promises.readdir(imageDir);
     const images = files.filter(
       (file) => file !== "favicon.png" && file !== "LOGO.avif" && file !== "TC.avif" && file !== "GENERAL.avif"
     );
     db.data.game.images = images;
     db.data.game.remainingImages = [...images];
-    db.data.game.lastSelectedImages = [];
-  });
+    db.data.game.selectedImages = [];
+    db.data.game.currentRound = 0;
+    db.data.game.totalRounds = images.length / 4;
+    db.data.game.gameState = "waiting";
+    db.data.game.currentPlayer = null;
+    await db.write();
+  } catch (err) {
+    console.error("Error leyendo el directorio de imágenes:", err);
+    throw new Error("No se pudo leer las imágenes");
+  }
+}
+
+////////////////////////////////////////////////////
+//
+// Sección de gestión de jugadores
+//
+///////////////////////////////////////////////////
+
+export async function getPlayerInfo(playerId) {
+  const player = db.data.players.find((p) => p.id === playerId);
+  if (!player) {
+    throw new Error("Player not found");
+  }
+  return player;
+}
+
+export async function updatePlayerName(playerId, name) {
+  const player = db.data.players.find((p) => p.id === playerId);
+  if (player) {
+    player.name = name;
+    await db.write();
+  }
+}
+
+////////////////////////////////////////////////////
+//
+// Sección de gestión del juego
+//
+///////////////////////////////////////////////////
+
+export async function getGameState() {
+  return db.data.game || {};
+}
+
+export async function updateGameState(newState) {
+  db.data.game.gameState = newState;
   await db.write();
 }
 
-export async function deleteUsedImages(usedImages) {
-  const db = getDatabase();
-  db.data.game.remainingImages = db.data.game.remainingImages.filter((img) => !usedImages.includes(img));
+export async function updateSelectedImages(selectedImages) {
+  db.data.game.selectedImages = selectedImages;
   await db.write();
 }
 
-export function getGameState() {
-  const db = getDatabase();
-  return {
-    lastSelectedImages: db.data.game.lastSelectedImages || [],
-    remainingImages: db.data.game.remainingImages || [],
-    currentRound: db.data.game.currentRound || 0,
-    totalRounds: db.data.game.totalRounds || 0,
-  };
-}
-
-export async function updateGameRound(currentRound, totalRounds) {
-  const db = getDatabase();
-  db.data.game.currentRound = currentRound;
-  db.data.game.totalRounds = totalRounds;
+export async function updateRemainingImages() {
+  db.data.game.remainingImages = db.data.game.remainingImages.filter(
+    (img) => !db.data.game.selectedImages.includes(img)
+  );
   await db.write();
 }
 
-export function getPlayerScore(playerId) {
+export async function updateCurrentRound() {
+  db.data.game.currentRound += 1;
+  await db.write();
+}
+
+////////////////////////////////////////////////////
+//
+// Sección de gestión de las puntuaciones
+//
+///////////////////////////////////////////////////
+
+export async function getPlayerScore(playerId) {
   const player = db.data.players.find((p) => p.id === playerId);
   return player ? player.score : 0;
 }
 
-export function getAllPlayerScores() {
-  return db.data.players.map(({ id, name, score }) => ({
-    id,
-    name,
-    score: typeof score === "object" ? score.score || 0 : score || 0,
-  }));
-}
-
-export async function setPlayerScore(playerId, scoreToAdd) {
+export async function setPlayerScore(playerId, score) {
   const player = db.data.players.find((p) => p.id === playerId);
   if (player) {
-    const currentScore = player.score || 0;
-    player.score = currentScore + (typeof scoreToAdd === "number" ? scoreToAdd : 0);
+    player.score = score;
     await db.write();
-    return true;
   }
-  return false;
 }
 
 export async function setAllPlayerScores(score) {
@@ -134,4 +185,11 @@ export async function setAllPlayerScores(score) {
     player.score = score;
   }
   await db.write();
+}
+
+export async function getAllPlayerScores() {
+  return db.data.players.map(({ id, score }) => ({
+    id,
+    score: typeof score === "object" ? score.score || 0 : score || 0,
+  }));
 }

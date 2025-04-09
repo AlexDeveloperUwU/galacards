@@ -1,177 +1,129 @@
-// Configuración inicial
-document.getElementById("background-video").playbackRate = 0.5;
+////////////////////////////////////////////////////
+//
+// Sección de configuración y constantes
+//
+///////////////////////////////////////////////////
 
 const queryParams = new URLSearchParams(window.location.search);
 const playerId = queryParams.get("id");
 const isDevMode = queryParams.get("dev") === "true";
+const audio = new Audio("/public/sounds/wheel.wav");
+let hostId = null;
+
+const cardContainers = [
+  document.getElementById("cardContainer1"),
+  document.getElementById("cardContainer2"),
+  document.getElementById("cardContainer3"),
+  document.getElementById("cardContainer4"),
+];
+
+const cardNames = [
+  document.getElementById("cardName1"),
+  document.getElementById("cardName2"),
+  document.getElementById("cardName3"),
+  document.getElementById("cardName4"),
+];
+const pointsContainer = document.getElementById("pointsContainer");
+const spinButton = document.getElementById("spinButton");
+const turnButton = document.getElementById("turnButton");
+const avaliableCards = document.getElementById("avaliableCards");
+const currentRound = document.getElementById("roundNumber");
+const totalRounds = document.getElementById("totalRounds");
+
+////////////////////////////////////////////////////
+//
+// Sección de inicialización
+//
+///////////////////////////////////////////////////
 
 window.onload = () => {
-  fetchImages();
-  socket.emit("game:getState");
+  document.getElementById("background-video").playbackRate = 0.5;
+  audio.loop = true;
 };
+
+////////////////////////////////////////////////////
+//
+// Sección de socket.io
+//
+///////////////////////////////////////////////////
 
 const socket = io(window.location.host, {
   auth: { id: playerId },
 });
 
-let hostId = null;
-
-// Eventos del socket
 socket.on("connect", () => {
-  console.log("Conectado al servidor con ID:", playerId);
-  socket.emit("player:getData");
   if (isDevMode) {
     socket.emit("game:reset");
   }
+
+  socket.emit("general:getData");
 });
 
-socket.on("connect_error", (err) => {
-  console.error("Error de conexión:", err.message);
+socket.on("general:returnData", (data) => {
+  handleReturnedData(data);
 });
 
-socket.on("disconnect", () => {
-  console.log("Desconectado del servidor");
+socket.on("game:returnGameData", (data) => {
+  handleGameData(data);
 });
 
-socket.on("player:data", handlePlayerData);
-
-socket.on("player:nameUpdated", async (data) => {
-  const { playerId, name } = data;
-  await savePlayerName(playerId, name);
-  sendPlayerData(socket);
+socket.on("game:returnSpin", async (data) => {
+  const { spinData, selected, hasMoreRounds, currentRound, remainingImages } = data;
+  await handleSpinData(spinData, selected, hasMoreRounds, currentRound, remainingImages);
 });
 
-socket.on("player:links", displayPlayerLinks);
-
-socket.on("game:resetComplete", () => {
-  console.log("Juego reseteado. Listo para empezar de nuevo.");
-  handleResetGame();
+socket.on("game:returnReset", async () => {
+  handleGameReset();
 });
 
-socket.on("game:state", (gameState) => {
-  handleGameState(gameState);
-});
+////////////////////////////////////////////////////
+//
+// Sección de funciones auxiliares para el socket
+//
+///////////////////////////////////////////////////
 
-socket.on("game:round", (data) => {
-  const { currentRound, remainingCards, totalRounds } = data;
-  document.getElementById("avaliableCards").textContent = remainingCards;
-  document.getElementById("roundNumber").textContent = `${currentRound}/${totalRounds}`;
-});
+function handleReturnedData(data) {
+  const game = data.game || {};
+  const players = data.players || [];
 
-socket.on("score:updateAll", updateScoreboard);
-socket.on("score:update", (data) => {
-  const { playerId, score } = data;
-  updatePlayerScore(playerId, score);
-});
+  if (players.length > 0) {
+    handlePlayerData(players);
+  }
 
-// Funciones auxiliares
-function updateScoreboard(scores) {
-  console.log("Recibido scoreboard:", scores);
-  const pointsContainer = document.getElementById("pointsContainer");
-  const scoreHtml = scores
-    .filter((player) => player.id !== hostId)
-    .map(
-      (player) => `
-        <div class="bg-purple-bg bg-opacity-50 rounded-lg p-2">
-          <p class="text-white text-sm">
-            ${player.name}: 
-            <span id="score-${player.id}" class="font-bold text-purple-light score-update">${player.score}</span>
-          </p>
-        </div>
-      `
-    )
-    .join("");
+  if (game) {
+    handleGameData(game);
+  }
+}
 
-  pointsContainer.innerHTML = scoreHtml;
+function handlePlayerData(players) {
+  // Handle host
+  hostId = players[0].id;
+  const hostIframe = document.getElementById("hostIframe");
+  const hostName = document.getElementById("hostName");
+  if (hostIframe && hostName) {
+    hostIframe.src = `https://vdo.ninja/?view=${hostId}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+    hostName.textContent = players[0]?.name || "Pulpo a la gallega";
+  }
+  pointsContainer.innerHTML = "";
 
-  scores.forEach((player) => {
+  // Handle players
+  players.slice(1).forEach((player, index) => {
+    const playerName = document.getElementById(`playerName${index + 1}`);
+    const playerIframe = document.getElementById(`player${index + 1}iframe`);
+    pointsContainer.innerHTML += `
+    <div class="bg-purple-bg bg-opacity-50 rounded-lg p-2">
+        <p class="text-white text-sm">
+      ${player.name}: 
+      <span id="score-${player.id}" class="font-bold text-purple-light score-update">${player.score}</span>
+        </p>
+    </div>`;
+
     const scoreElement = document.getElementById(`score-${player.id}`);
     if (scoreElement) {
       setTimeout(() => {
         scoreElement.classList.remove("score-update");
       }, 500);
     }
-  });
-}
-
-function updatePlayerScore(playerId, score) {
-  const scoreElement = document.getElementById(`score-${playerId}`);
-  if (scoreElement) {
-    scoreElement.textContent = score;
-
-    scoreElement.classList.add("score-update");
-    setTimeout(() => {
-      scoreElement.classList.remove("score-update");
-    }, 500);
-  }
-}
-
-function handlePlayerData(players) {
-  console.log("Recibido playerData:", players);
-  if (players.length > 0) {
-    hostId = players[0]?.id;
-
-    const hostIframe = document.getElementById("hostIframe");
-    const hostName = document.getElementById("hostName");
-    if (hostIframe && hostName) {
-      hostIframe.src = `https://vdo.ninja/?view=${hostId}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
-      hostName.textContent = players[0]?.name || "Pulpo a la gallega";
-    }
-
-    if (players[0]?.name === "Host") {
-      promptForHostName();
-    }
-
-    updatePlayerFrames(players.slice(1));
-  }
-
-  socket.emit("score:getAll");
-}
-
-function promptForHostName() {
-  Swal.fire({
-    title: "Escribe tu nombre :D",
-    input: "text",
-    inputAttributes: {
-      maxlength: 20,
-      autocapitalize: "off",
-      autocorrect: "off",
-      style:
-        "text-align: center; font-size: 1rem; padding: 0.5rem; border-radius: 0.5rem; border: 2px solid #8b458b; background-color: #6a2c70; color: white; box-shadow: 0 0 10px #8b458b;",
-    },
-    allowOutsideClick: false,
-    allowEscapeKey: false,
-    showCancelButton: false,
-    confirmButtonText: "Yep, esa persona soy yo!",
-    customClass: {
-      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[90%] max-w-md",
-      title: "text-3xl text-white font-bold mb-4 text-center",
-      input: "text-purple-dark text-lg font-bold p-2 rounded-lg border-2 border-purple-light",
-      confirmButton:
-        "mt-4 w-full py-2 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md",
-    },
-    preConfirm: (name) => {
-      if (!name || name.trim().length === 0) {
-        Swal.showValidationMessage("El nombre no puede estar vacío");
-        return false;
-      }
-      if (name.length > 20) {
-        Swal.showValidationMessage("El nombre no puede tener más de 20 caracteres");
-        return false;
-      }
-      return name.trim();
-    },
-  }).then((result) => {
-    if (result.isConfirmed) {
-      socket.emit("player:updateName", { playerId: hostId, name: result.value });
-    }
-  });
-}
-
-function updatePlayerFrames(players) {
-  players.forEach((player, index) => {
-    const playerName = document.getElementById(`playerName${index + 1}`);
-    const playerIframe = document.getElementById(`player${index + 1}iframe`);
 
     if (playerName && playerIframe) {
       playerName.innerText = player.name;
@@ -180,91 +132,10 @@ function updatePlayerFrames(players) {
   });
 }
 
-function displayPlayerLinks(players) {
-  const contentHtml = players
-    .map((player) => {
-      const isHost = player.name === players[0]?.name;
-      return `
-        <div class="bg-purple-bg bg-opacity-94 rounded-lg p-3">
-          <p class="text-white">Nombre: <span class="font-bold text-purple-light">${player.name}</span></p>
-          <button class="mt-2 w-full py-2 bg-purple-light text-purple-dark text-sm font-bold rounded-lg transition-colors duration-300 shadow-md copy-link" 
-            ${
-              isHost
-                ? `data-vdo-url="${player.vdoUrl}"`
-                : `data-game-url="${player.playerUrl}" data-vdo-url="${player.vdoUrl}"`
-            }>
-            ${isHost ? "Copiar enlace" : "Copiar mensaje"}
-          </button>
-        </div>
-      `;
-    })
-    .join("");
-
-  Swal.fire({
-    title: "Info jugadores",
-    html: contentHtml,
-    customClass: {
-      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[30%]",
-      title: "text-3xl text-white font-bold mb-4 text-center",
-      htmlContainer: "space-y-4",
-      confirmButton:
-        "mt-4 w-[100%] mx-auto py-2 bg-purple-light text-purple-dark text-base font-bold rounded-lg transition-colors duration-300 shadow-md",
-    },
-    showConfirmButton: true,
-    confirmButtonText: "Cerrar",
-    didOpen: () => {
-      document.querySelectorAll(".copy-link").forEach((button) => {
-        button.addEventListener("click", () => {
-          const vdoUrl = button.getAttribute("data-vdo-url");
-          const gameUrl = button.getAttribute("data-game-url");
-          const isHost = !gameUrl;
-          const message = isHost
-            ? vdoUrl
-            : `Hola! Te envío los enlaces que debes usar para jugar al juego ^^\n\nVDO.Ninja: ${vdoUrl}\nWeb Juego: ${gameUrl}\n\nEste mensaje es automatizado btw :p`;
-
-          navigator.clipboard.writeText(message).then(() => {
-            button.classList.add("bg-green-500", "text-white");
-            setTimeout(() => button.classList.remove("bg-green-500", "text-white"), 1000);
-          });
-        });
-      });
-    },
-  });
-}
-
-function handleSpinButton() {
-  const button = document.getElementById("changingGameButton");
-
-  if (button.textContent === "Reset") {
-    socket.emit("game:reset");
-    button.textContent = "¡Girar!";
-  } else {
-    socket.emit("game:spin");
-
-    // Lo desactivamos para que no se repita el evento
-    socket.off("game:spinResult");
-
-    socket.on("game:spinResult", async (data) => {
-      if (data.error) {
-        console.error(data.error);
-        return;
-      }
-
-      const { spinData, selectedImages, hasMoreRounds } = data;
-
-      await spin(spinData, selectedImages);
-
-      if (!hasMoreRounds) {
-        button.textContent = "Reset";
-      }
-    });
-  }
-}
-
-function handleGameState(gameState) {
-  const { lastSelectedImages } = gameState;
-  if (lastSelectedImages && lastSelectedImages.length === 4) {
-    lastSelectedImages.forEach((imageName, index) => {
+function handleGameData(game) {
+  if (game.selectedImages) {
+    const selectedImages = game.selectedImages;
+    selectedImages.forEach((imageName, index) => {
       const cardContainer = cardContainers[index];
       const initialImage = document.getElementById(`cardGenerica${index + 1}`);
 
@@ -286,17 +157,24 @@ function handleGameState(gameState) {
       cardNames[index].textContent = formattedName;
     });
   }
+  document.getElementById("avaliableCards").textContent = game.remainingImages.length;
+  document.getElementById("roundNumber").textContent = game.currentRound;
+  document.getElementById("totalRounds").textContent = game.totalRounds;
 }
 
-// Eventos del DOM
-document.getElementById("getPlayerLinks").addEventListener("click", () => {
-  socket.emit("player:getLinks");
-});
+////////////////////////////////////////////////////
+//
+// Sección de funciones auxiliares para el juego
+//
+///////////////////////////////////////////////////
 
-document.getElementById("changingGameButton").addEventListener("click", handleSpinButton);
-
-//! Funcionalidades para la animación
-// Funcionalidades para precarga
+function createImageElement(imageName) {
+  const img = document.createElement("img");
+  img.src = `/public/images/${imageName}`;
+  img.classList.add("w-full", "h-full", "object-cover", "rounded-2xl");
+  img.alt = imageName.split(".")[0];
+  return img;
+}
 
 async function fetchImages() {
   try {
@@ -315,38 +193,14 @@ function preloadImages(imageArray) {
   });
 }
 
-// Constantes para la animación
-const cardContainers = [
-  document.getElementById("cardContainer1"),
-  document.getElementById("cardContainer2"),
-  document.getElementById("cardContainer3"),
-  document.getElementById("cardContainer4"),
-];
-
-const cardNames = [
-  document.getElementById("cardName1"),
-  document.getElementById("cardName2"),
-  document.getElementById("cardName3"),
-  document.getElementById("cardName4"),
-];
-
-const audio = new Audio("/public/sounds/wheel.wav");
-audio.loop = true;
-
-function createImageElement(imageName) {
-  const img = document.createElement("img");
-  img.src = `/public/images/${imageName}`;
-  img.classList.add("w-full");
-  img.classList.add("h-full");
-  img.classList.add("object-cover");
-  img.classList.add("rounded-2xl");
-  img.alt = imageName.split(".")[0];
-  return img;
-}
-
-async function spin(spinData, selectedImages) {
-  const button = document.getElementById("changingGameButton");
-  button.setAttribute("disabled", "true");
+async function handleSpinData(spinData, selected, hasMoreRounds, cRound, remainingImages) {
+  spinButton.setAttribute("disabled", true);
+  turnButton.setAttribute("disabled", true);
+  currentRound.textContent = cRound;
+  avaliableCards.textContent = remainingImages;
+  if (!hasMoreRounds) {
+    spinButton.textContent = "Reset";
+  }
 
   for (const name of cardNames) {
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -354,9 +208,8 @@ async function spin(spinData, selectedImages) {
   }
 
   await new Promise((resolve) => setTimeout(resolve, 500));
-
   for (let i = 0; i < 4; i++) {
-    const formattedName = selectedImages[i]
+    const formattedName = selected[i]
       .split(".")[0]
       .toLowerCase()
       .replace(/\b\w/g, (char) => char.toUpperCase());
@@ -376,7 +229,8 @@ async function spin(spinData, selectedImages) {
     name.classList.remove("revealed");
   }
 
-  button.removeAttribute("disabled");
+  spinButton.removeAttribute("disabled");
+  turnButton.removeAttribute("disabled");
 }
 
 async function spinContainer(cardContainerNumber, cardContainer, reelData) {
@@ -460,9 +314,9 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
   });
 }
 
-async function handleResetGame() {
-  const button = document.getElementById("changingGameButton");
-  button.setAttribute("disabled", "true");
+async function handleGameReset() {
+  spinButton.setAttribute("disabled", true);
+  turnButton.setAttribute("disabled", true);
 
   for (const name of cardNames) {
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -475,24 +329,41 @@ async function handleResetGame() {
         const images = container.querySelectorAll("img:not(#cardGenerica" + (index + 1) + ")");
         const genericImage = document.getElementById(`cardGenerica${index + 1}`);
 
-        genericImage.style.position = "relative";
-        genericImage.style.opacity = "1";
-        genericImage.classList.add("crossfade-enter");
+        genericImage.style.zIndex = "1";
 
-        images.forEach((img) => {
-          img.classList.add("crossfade-exit");
-          img.classList.add("crossfade-exit-active");
-        });
+        const reel = document.createElement("div");
+        reel.style.position = "absolute";
+        reel.style.top = "0";
+        reel.style.left = "0";
+        reel.style.width = "100%";
+        reel.style.height = "100%";
+        reel.style.zIndex = "2";
+        reel.className = "reel-transition";
+        container.appendChild(reel);
 
-        setTimeout(() => {
-          images.forEach((img) => img.remove());
-          genericImage.classList.add("crossfade-enter-active");
+        void genericImage.offsetWidth;
+
+        requestAnimationFrame(() => {
+          images.forEach((img) => {
+            img.style.transition = "opacity 0.6s ease-in-out";
+            img.style.opacity = "0";
+          });
+
+          genericImage.style.transition = "opacity 0.6s ease-in-out";
+          genericImage.style.opacity = "1";
 
           setTimeout(() => {
-            genericImage.classList.remove("crossfade-enter", "crossfade-enter-active");
-            resolve();
+            images.forEach((img) => img.remove());
+
+            reel.remove();
+            genericImage.style.zIndex = "2";
+            genericImage.style.opacity = "1";
+
+            setTimeout(() => {
+              resolve();
+            }, 600);
           }, 600);
-        }, 600);
+        });
       });
     })
   );
@@ -504,9 +375,32 @@ async function handleResetGame() {
   for (const name of cardNames) {
     name.classList.add("revealed");
     await new Promise((resolve) => setTimeout(resolve, 400));
-    name.classList.remove("blurCardName");
-    name.classList.remove("revealed");
+    name.classList.remove("blurCardName", "revealed");
   }
 
-  button.removeAttribute("disabled");
+  spinButton.removeAttribute("disabled");
+  turnButton.removeAttribute("disabled");
 }
+
+////////////////////////////////////////////////////
+//
+// Sección de funciones para los botones
+//
+///////////////////////////////////////////////////
+
+document.getElementById("getPlayerLinks").addEventListener("click", () => {
+  socket.emit("player:getAllPlayersData");
+});
+
+socket.on("player:returnAllPlayersData", (players) => {
+  displayPlayerLinks(players);
+});
+
+spinButton.addEventListener("click", () => {
+  if (spinButton.textContent === "Reset") {
+    socket.emit("game:reset");
+    spinButton.textContent = "Spin!";
+  } else {
+    socket.emit("game:spin");
+  }
+});

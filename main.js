@@ -6,10 +6,10 @@ import fs from "fs";
 import webRoutes from "./routes/web.js";
 import initializeSocket from "./socket.js";
 import { nanoid } from "nanoid";
-import { initializeDatabase, generatePlayerData, getDatabase, generateImageArray } from "./utils/db.js";
+import * as dbase from "./utils/db.js";
 import { readFile } from "fs/promises";
 
-const data = await readFile('./config/config.json', 'utf-8');
+const data = await readFile("./config/config.json", "utf-8");
 const config = JSON.parse(data);
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,25 +45,14 @@ app.use("/public", express.static(path.join(__dirname, "web", "public")));
 initializeSocket(server);
 
 // Inicializar base de datos
-await initializeDatabase();
+await dbase.initializeDatabase();
 
 if (process.argv.includes("resetData")) {
-  await generatePlayerData(config.gameUrl, nanoid);
-  await generateImageArray();
-
-  const db = getDatabase();
-  db.data.game.currentRound = 0;
-  db.data.game.totalRounds = Math.ceil(db.data.game.images.length / 4);
-  await setAllPlayerScores(0);
-  const updatedScores = getAllPlayerScores();
-  db.write().then(() => {
-    console.log("Game data has been reset.");
-    console.log("Scores have been updated:", updatedScores);
-  });
+  await dbase.resetApp(config.gameBaseUrl);
 }
 
 // Obtener el ID del host desde la base de datos
-const db = getDatabase();
+const db = dbase.getDatabase();
 const hostId = db.data.players[0]?.id;
 
 server.listen(port, () => {

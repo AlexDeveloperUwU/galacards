@@ -1,9 +1,9 @@
 import { Server } from "socket.io";
-import { initializeDatabase, getDatabase, savePlayerName, getGameState, updateGameRound, getPlayerScore, getAllPlayerScores, setPlayerScore, setAllPlayerScores } from "./utils/db.js";
+import * as dbase from "./utils/db.js";
 
 //! Inicialización del Socket
 async function initializeSocket(server) {
-  await initializeDatabase();
+  await dbase.initializeDatabase();
   const io = new Server(server);
 
   io.use(authenticateSocket);
@@ -23,7 +23,7 @@ function authenticateSocket(socket, next) {
     return;
   }
 
-  const db = getDatabase();
+  const db = dbase.getDatabase();
   const player = db.data.players.find((p) => p.id === playerId);
   if (!player) {
     console.log(`Desconectando: ID de autenticación no válido (${playerId})`);
@@ -36,97 +36,61 @@ function authenticateSocket(socket, next) {
 }
 
 //! Registro de eventos del Socket
+// Para todo lo que sean returns, se utilizará returnX
 async function registerSocketHandlers(socket, io) {
   const playerId = socket.playerId;
 
-  socket.on("player:getData", () => sendPlayerData(socket));
-  socket.on("player:getLinks", () => sendPlayerLinks(socket));
-  socket.on("game:getState", () => sendGameState(socket));
-  socket.on("player:updateName", async (data) => {
-    await savePlayerName(playerId, data.name);
-    sendPlayerData(socket);
-  });
-  socket.on("game:spin", () => handleSpin(socket));
-  socket.on("game:reset", () => handleResettingGame(socket));
-  socket.on("disconnect", () => console.log("Cliente desconectado:", socket.id));
+  socket.on("general:getData", () => sendGeneralData(socket));
 
-  // Manejadores para puntuaciones
-  socket.on("score:get", ({ playerId: targetId }) => {
-    const score = getPlayerScore(targetId || playerId);
-    socket.emit("score:update", { playerId: targetId || playerId, score });
-  });
+  socket.on("player:getAllPlayersData", () => getAllPlayersData(socket));
 
-  socket.on("score:getAll", () => {
-    const scores = getAllPlayerScores();
-    socket.emit("score:updateAll", scores);
-  });
+  socket.on("game:reset", async () => resetGameData(socket));
+  socket.on("game:spin", async () => gameSpin(socket));
+}
 
-  socket.on("score:set", async ({ playerId: targetId, score }) => {
-    if (await setPlayerScore(targetId || playerId, score)) {
-      const updatedScore = getPlayerScore(targetId || playerId);
-      io.emit("score:update", { playerId: targetId || playerId, score: updatedScore });
-    }
-  });
+//! Funciones auxiliares del socket
 
-  socket.on("score:setAll", async (scores) => {
-    await setAllPlayerScores(scores);
-    const updatedScores = getAllPlayerScores();
-    io.emit("score:updateAll", updatedScores);
+async function sendGeneralData(socket) {
+  var data = await dbase.getDatabase();
+  socket.emit("general:returnData", {
+    players: data.data.players,
+    game: data.data.game,
   });
 }
 
-//! Funciones auxiliares para eventos del Socket
+async function sendGameData(socket) {
+  const db = dbase.getDatabase();
+  const gameData = db.data.game;
+  socket.emit("game:returnGameData", gameData);
+}
 
-// Enviar datos de los jugadores al cliente
-async function sendPlayerData(socket) {
-  const db = getDatabase();
+async function getAllPlayersData(socket) {
+  const db = dbase.getDatabase();
   const players = db.data.players;
-  socket.emit("player:data", players);
+  socket.emit("player:returnAllPlayersData", players);
 }
 
-// Enviar enlaces de los jugadores al cliente
-function sendPlayerLinks(socket) {
-  const db = getDatabase();
-  const players = db.data.players || [];
-  const playerLinks = players.map(({ name, vdoUrl, gameUrl }) => ({ name, vdoUrl, gameUrl }));
-  socket.emit("player:links", playerLinks);
+async function resetGameData(socket) {
+  await dbase.generateGameData();
+  sendGameData(socket);
+  socket.emit("game:returnReset");
 }
 
-// Enviar el estado del juego al cliente
-function sendGameState(socket) {
-  const gameState = getGameState();
-  socket.emit("game:state", gameState);
+async function gameSpin(socket) {
+  const data = await dbase.getGameState();
+  const imageList = data.images || [];
+  const remainingImages = data.remainingImages || [];
+  const selectedImages = data.selectedImages || [];
+  let previousSelectedImages = selectedImages;
 
-  const db = getDatabase();
-  const imageList = db.data.game.images || [];
-  const currentRound = (db.data.game.currentRound || 0);
-  const totalRounds = Math.ceil(imageList.length / 4);
-  socket.emit("game:round", {
-    currentRound,
-    remainingCards: db.data.game.remainingImages.length,
-    totalRounds,
-  });
-}
-
-// Manejar el evento "spin"
-function handleSpin(socket) {
-  const db = getDatabase();
-  const imageList = db.data.game.images || [];
-  const remainingImages = db.data.game.remainingImages;
-
-  if (remainingImages.length < 4) {
-    socket.emit("game:spinResult", { error: "No hay suficientes imágenes restantes." });
-    return;
-  }
-
-  let previousSelectedImages = db.data.game.lastSelectedImages;
   if (!previousSelectedImages || previousSelectedImages.length === 0) {
     previousSelectedImages = Array(4).fill("GENERAL.avif");
   }
 
-  const selectedImages = getRandomImages(remainingImages, 4);
-
-  const spinData = selectedImages.map((finalImage, index) => {
+  const selected = getRandomImages(remainingImages, 4);
+  const hasMoreRounds = (remainingImages.length - 4) >= 4;
+  const currentRound = (data.currentRound || 0) + 1;
+  const spinData = selected.map((finalImage, index) => {
     const fillerImages = getRandomImages(
       imageList.filter((img) => img !== finalImage),
       15
@@ -136,48 +100,16 @@ function handleSpin(socket) {
     return fillerImages;
   });
 
-  db.data.game.remainingImages = remainingImages.filter((img) => !selectedImages.includes(img));
-  db.data.game.lastSelectedImages = selectedImages;
-  const hasMoreRounds = db.data.game.remainingImages.length >= 4;
+  socket.emit("game:returnSpin", { spinData, selected, hasMoreRounds, currentRound, remainingImages: remainingImages.length - 4 });
 
-  const currentRound = (db.data.game.currentRound || 0) + 1;
-  const totalRounds = Math.ceil(imageList.length / 4);
-  
-  updateGameRound(currentRound, totalRounds).then(() => {
-    socket.emit("game:spinResult", { spinData, selectedImages, hasMoreRounds });
-    socket.emit("game:round", {
-      currentRound,
-      remainingCards: db.data.game.remainingImages.length,
-      totalRounds,
-    });
-  });
+  dbase.updateSelectedImages(selected);
+  dbase.updateRemainingImages();
+  dbase.updateCurrentRound();
 }
 
-// Manejar el evento "handleResettingGame"
-async function handleResettingGame(socket) {
-  const db = getDatabase();
-  db.data.game.remainingImages = [...db.data.game.images];
-  db.data.game.lastSelectedImages = [];
-  db.data.game.currentRound = 0;
-  db.data.game.totalRounds = Math.ceil(db.data.game.images.length / 4);
-  await setAllPlayerScores(0);
-  const updatedScores = getAllPlayerScores();
-  db.write().then(() => {
-    socket.emit("game:resetComplete");
-    socket.emit("score:updateAll", updatedScores);
-    socket.emit("game:round", {
-      currentRound: 0,
-      remainingCards: db.data.game.images.length,
-      totalRounds: Math.ceil(db.data.game.images.length / 4),
-    });
-  });
-}
-
-//! Utilidades generales
-
-// Seleccionar imágenes aleatorias
-function getRandomImages(array, count) {
-  const shuffled = array.sort(() => 0.5 - Math.random());
+//! Funciones auxiliares generales
+function getRandomImages(remainingImages, count) {
+  const shuffled = remainingImages.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
 
