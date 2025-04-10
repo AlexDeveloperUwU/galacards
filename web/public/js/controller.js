@@ -447,16 +447,14 @@ async function handleGameReset() {
 
 function applyStylesToCurrentPlayer(playerId) {
   console.log("Aplicando estilos al jugador actual:", playerId);
-  const currentHighlightedCard = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
-  if (currentHighlightedCard) {
-    currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
-  }
 
-  const currentHighlightedIframe = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
-  if (currentHighlightedIframe) {
-    currentHighlightedIframe.classList.remove("shadow-glow", "scale-[1.04]");
-  }
+  // Eliminar estilos previos
+  const currentHighlightedElements = document.querySelectorAll(".shadow-glow.scale-\\[1\\.04\\]");
+  currentHighlightedElements.forEach((element) => {
+    element.classList.remove("shadow-glow", "scale-[1.04]");
+  });
 
+  // Aplicar estilos al jugador actual
   if (playerId) {
     const cardContainer = document.getElementById(`cardContainer${playerId}`);
     const iframeContainer = document.getElementById(`player${playerId}iframe`);
@@ -472,28 +470,7 @@ function applyStylesToCurrentPlayer(playerId) {
 }
 
 function handleApplyCurrentRound(data) {
-  const { playerId } = data;
-
-  const currentHighlightedCard = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
-  if (currentHighlightedCard) {
-    currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
-  }
-
-  const currentHighlightedIframe = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
-  if (currentHighlightedIframe) {
-    currentHighlightedIframe.classList.remove("shadow-glow", "scale-[1.04]");
-  }
-
-  const cardContainer = document.getElementById(`cardContainer${playerId}`);
-  const iframeContainer = document.getElementById(`player${playerId}iframe`);
-
-  if (cardContainer) {
-    cardContainer.classList.add("shadow-glow", "scale-[1.04]");
-  }
-
-  if (iframeContainer) {
-    iframeContainer.classList.add("shadow-glow", "scale-[1.04]");
-  }
+  applyStylesToCurrentPlayer(data.playerId);
 }
 
 ////////////////////////////////////////////////////
