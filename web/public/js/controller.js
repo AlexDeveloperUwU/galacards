@@ -139,7 +139,7 @@ function handlePlayerData(players, updateVdo, socket) {
   const hostName = document.getElementById("hostName");
   if (hostIframe && hostName) {
     if (updateVdo) {
-      hostIframe.src = `https://vdo.ninja/?view=${hostId}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+      hostIframe.src = `https://vdo.ninja/?view=${hostId}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1&cleanoutput`;
     }
     hostName.textContent = players[0]?.name || "Pulpo a la gallega";
   }
@@ -168,7 +168,7 @@ function handlePlayerData(players, updateVdo, socket) {
       playerName.innerText = player.name;
     }
     if (playerIframe && updateVdo) {
-      playerIframe.src = `https://vdo.ninja/?view=${player.id}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+      playerIframe.src = `https://vdo.ninja/?view=${player.id}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1&cleanoutput`;
     }
   });
 
