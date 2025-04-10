@@ -43,21 +43,37 @@ async function registerSocketHandlers(socket, io) {
   socket.on("general:getData", () => sendGeneralData(socket));
 
   socket.on("player:getAllPlayersData", () => getAllPlayersData(socket, true, false));
+  socket.on("player:getLinks", async () => sendLinks(socket));
   socket.on("player:setName", async (name) => {
     handleNameChange(io, socket.playerId, name);
   });
 
   socket.on("game:reset", async () => resetGameData(io));
   socket.on("game:spin", async () => gameSpin(io));
+  socket.on("game:getCurrentPlayer", async () => {
+    const data = await dbase.getCurrentPlayer();
+    socket.emit("game:returnCurrentPlayer", { playerId: data });
+  });
+  socket.on(
+    "game:setCurrentPlayer",
+    async () =>
+      await dbase.setCurrentPlayer().then(async () => {
+        const data = await dbase.getCurrentPlayer();
+        io.emit("game:returnCurrentPlayer", { playerId: data });
+      })
+  );
+  socket.on("game:getCurrentScores", async () => cosita());
+  socket.on("game:setCurrentScores", async () => cosita());
 }
 
 //! Funciones auxiliares del socket
 
 async function sendGeneralData(socket) {
   var data = await dbase.getDatabase();
+  const currentPlayerPosition = await dbase.getCurrentPlayer();
   socket.emit("general:returnData", {
     players: data.data.players,
-    game: data.data.game,
+    game: { ...data.data.game, currentPlayer: currentPlayerPosition },
   });
 }
 
@@ -67,10 +83,16 @@ async function sendGameData(socket) {
   socket.emit("game:returnGameData", gameData);
 }
 
+async function sendLinks(socket) {
+  const db = dbase.getDatabase();
+  const players = db.data.players;
+  socket.emit("player:returnLinks", { players: players });
+}
+
 async function getAllPlayersData(socket, updateVdo, isNameChange) {
   const db = dbase.getDatabase();
   const players = db.data.players;
-  if(isNameChange) {
+  if (isNameChange) {
     socket.emit("player:returnPlayerNameChange", { players: players, updateVdo: updateVdo });
   } else {
     socket.emit("player:returnAllPlayersData", { players: players, updateVdo: updateVdo });

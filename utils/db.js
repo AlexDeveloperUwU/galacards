@@ -2,7 +2,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { JSONFilePreset } from "lowdb/node";
 import fs from "fs";
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 
 ////////////////////////////////////////////////////
 //
@@ -29,6 +29,9 @@ const defaultData = {
   },
 };
 let db;
+
+// Crear un nanoid personalizado con letras y números
+const nanoid = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 8);
 
 ////////////////////////////////////////////////////
 //
@@ -61,21 +64,21 @@ export async function resetApp(gameBaseUrl) {
 // Función para generar los datos de los jugadores
 async function generatePlayerData(gameBaseUrl) {
   db.data.players = [];
-  const hostId = nanoid(8);
+  const hostId = nanoid();
 
   const host = {
     id: hostId,
-    vdoUrl: `https://vdo.ninja/?push=${hostId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&autostart&device=1&room=glykroompush`,
+    vdoUrl: `https://vdo.ninja/?push=${hostId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&autostart&device=1`,
     name: "Pulpo a la gallega",
   };
   db.data.players.push(host);
 
   for (let i = 1; i <= 4; i++) {
-    const pId = nanoid(8);
+    const pId = nanoid();
     const player = {
       id: pId,
       playerUrl: `${gameBaseUrl}/player?id=${pId}`,
-      vdoUrl: `https://vdo.ninja/?push=${pId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&autostart&device=1&room=glykroompush`,
+      vdoUrl: `https://vdo.ninja/?push=${pId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&autostart&device=1`,
       name: `Jugador ${i}`,
       score: 0,
     };
@@ -100,6 +103,7 @@ export async function generateGameData() {
     db.data.game.totalRounds = images.length / 4;
     db.data.game.gameState = "waiting";
     db.data.game.currentPlayer = null;
+    db.data.game.assignedScores = [];
     await db.write();
   } catch (err) {
     console.error("Error leyendo el directorio de imágenes:", err);
@@ -194,3 +198,34 @@ export async function getAllPlayerScores() {
     score: typeof score === "object" ? score.score || 0 : score || 0,
   }));
 }
+
+export async function getCurrentPlayer() {
+  const players = db.data.players.slice(1, 5); 
+  const currentPlayerId = db.data.game.currentPlayer;
+
+  if (!currentPlayerId) {
+    return null;
+  }
+
+  const currentIndex = players.findIndex((p) => p.id === currentPlayerId);
+  return currentIndex !== -1 ? currentIndex + 1 : null; 
+}
+
+export async function setCurrentPlayer() {
+  const players = db.data.players.slice(1, 5);
+  const currentPlayer = db.data.game.currentPlayer;
+
+  if (currentPlayer === null) {
+    db.data.game.currentPlayer = players[0]?.id || null;
+  } else {
+    const currentIndex = players.findIndex((p) => p.id === currentPlayer);
+    if (currentIndex === -1 || currentIndex === players.length - 1) {
+      db.data.game.currentPlayer = null; 
+    } else {
+      db.data.game.currentPlayer = players[currentIndex + 1]?.id || null;
+    }
+  }
+
+  await db.write();
+}
+

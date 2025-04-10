@@ -5,7 +5,6 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 import webRoutes from "./routes/web.js";
 import initializeSocket from "./socket.js";
-import { nanoid } from "nanoid";
 import * as dbase from "./utils/db.js";
 import { readFile } from "fs/promises";
 
@@ -48,7 +47,7 @@ initializeSocket(server);
 await dbase.initializeDatabase();
 
 if (process.argv.includes("resetData")) {
-  await dbase.resetApp(config.gameBaseUrl);
+  await dbase.resetApp(config.gameUrl);
 }
 
 // Obtener el ID del host desde la base de datos

@@ -59,6 +59,10 @@ socket.on("connect", () => {
   socket.emit("general:getData");
 });
 
+socket.on("player:returnLinks", (data) => {
+  displayPlayerLinks(data.players);
+});
+
 socket.on("player:returnAllPlayersData", (data) => {
   const { players, updateVdo } = data;
   handlePlayerData(players, updateVdo, socket);
@@ -82,6 +86,10 @@ socket.on("game:returnSpin", async (data) => {
   await handleSpinData(spinData, selected, hasMoreRounds, currentRound, remainingImages);
 });
 
+socket.on("game:returnCurrentPlayer", (data) => {
+  handleApplyCurrentRound(data);
+});
+
 socket.on("game:returnReset", async () => {
   handleGameReset();
 });
@@ -102,6 +110,25 @@ function handleReturnedData(data, socket) {
 
   if (game) {
     handleGameData(game);
+  }
+
+  const currentPlayerPosition = game.currentPlayer;
+  if (currentPlayerPosition) {
+    const cardContainer = document.getElementById(`cardContainer${currentPlayerPosition}`);
+    const iframeContainer = document.getElementById(`player${currentPlayerPosition}iframe`);
+
+    const currentHighlightedCard = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
+    if (currentHighlightedCard) {
+      currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
+    }
+
+    if (cardContainer) {
+      cardContainer.classList.add("shadow-glow", "scale-[1.04]");
+    }
+
+    if (iframeContainer) {
+      iframeContainer.classList.add("shadow-glow", "scale-[1.04]");
+    }
   }
 }
 
@@ -147,7 +174,6 @@ function handlePlayerData(players, updateVdo, socket) {
 
   players.forEach((player) => {
     if (player.id === playerId) {
-      console.log(player.name)
       if (player.id === players[0].id && player.name.includes("Pulpo a la gallega")) {
         promptForUsername(socket);
       } else if (player.name.includes("Jugador")) {
@@ -185,6 +211,16 @@ function handleGameData(game) {
   document.getElementById("avaliableCards").textContent = game.remainingImages.length;
   document.getElementById("roundNumber").textContent = game.currentRound;
   document.getElementById("totalRounds").textContent = game.totalRounds;
+
+  const currentPlayer = game.currentPlayer;
+  if (currentPlayer) {
+    applyStylesToCurrentPlayer(currentPlayer);
+  } else {
+    const currentHighlightedCard = document.querySelector(".shadow-glow .scale-\\[1.04\\]");
+    if (currentHighlightedCard) {
+      currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
+    }
+  }
 }
 
 ////////////////////////////////////////////////////
@@ -409,6 +445,57 @@ async function handleGameReset() {
   turnButton.removeAttribute("disabled");
 }
 
+function applyStylesToCurrentPlayer(playerId) {
+  console.log("Aplicando estilos al jugador actual:", playerId);
+  const currentHighlightedCard = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
+  if (currentHighlightedCard) {
+    currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
+  }
+
+  const currentHighlightedIframe = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
+  if (currentHighlightedIframe) {
+    currentHighlightedIframe.classList.remove("shadow-glow", "scale-[1.04]");
+  }
+
+  if (playerId) {
+    const cardContainer = document.getElementById(`cardContainer${playerId}`);
+    const iframeContainer = document.getElementById(`player${playerId}iframe`);
+
+    if (cardContainer) {
+      cardContainer.classList.add("shadow-glow", "scale-[1.04]");
+    }
+
+    if (iframeContainer) {
+      iframeContainer.classList.add("shadow-glow", "scale-[1.04]");
+    }
+  }
+}
+
+function handleApplyCurrentRound(data) {
+  const { playerId } = data;
+
+  const currentHighlightedCard = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
+  if (currentHighlightedCard) {
+    currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
+  }
+
+  const currentHighlightedIframe = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
+  if (currentHighlightedIframe) {
+    currentHighlightedIframe.classList.remove("shadow-glow", "scale-[1.04]");
+  }
+
+  const cardContainer = document.getElementById(`cardContainer${playerId}`);
+  const iframeContainer = document.getElementById(`player${playerId}iframe`);
+
+  if (cardContainer) {
+    cardContainer.classList.add("shadow-glow", "scale-[1.04]");
+  }
+
+  if (iframeContainer) {
+    iframeContainer.classList.add("shadow-glow", "scale-[1.04]");
+  }
+}
+
 ////////////////////////////////////////////////////
 //
 // Sección de funciones para los botones
@@ -416,11 +503,7 @@ async function handleGameReset() {
 ///////////////////////////////////////////////////
 
 document.getElementById("getPlayerLinks").addEventListener("click", () => {
-  socket.emit("player:getAllPlayersData");
-});
-
-socket.on("player:returnAllPlayersData", (players) => {
-  displayPlayerLinks(players);
+  socket.emit("player:getLinks");
 });
 
 spinButton.addEventListener("click", () => {
@@ -430,4 +513,8 @@ spinButton.addEventListener("click", () => {
   } else {
     socket.emit("game:spin");
   }
+});
+
+turnButton.addEventListener("click", () => {
+  socket.emit("game:setCurrentPlayer");
 });
