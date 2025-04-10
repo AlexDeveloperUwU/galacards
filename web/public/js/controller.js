@@ -59,8 +59,18 @@ socket.on("connect", () => {
   socket.emit("general:getData");
 });
 
+socket.on("player:returnAllPlayersData", (data) => {
+  const { players, updateVdo } = data;
+  handlePlayerData(players, updateVdo, socket);
+});
+
+socket.on("player:returnPlayerNameChange", (data) => {
+  const { players, updateVdo } = data;
+  handlePlayerData(players, updateVdo, socket);
+});
+
 socket.on("general:returnData", (data) => {
-  handleReturnedData(data);
+  handleReturnedData(data, socket);
 });
 
 socket.on("game:returnGameData", (data) => {
@@ -82,12 +92,12 @@ socket.on("game:returnReset", async () => {
 //
 ///////////////////////////////////////////////////
 
-function handleReturnedData(data) {
+function handleReturnedData(data, socket) {
   const game = data.game || {};
   const players = data.players || [];
 
   if (players.length > 0) {
-    handlePlayerData(players);
+    handlePlayerData(players, true, socket);
   }
 
   if (game) {
@@ -95,13 +105,15 @@ function handleReturnedData(data) {
   }
 }
 
-function handlePlayerData(players) {
+function handlePlayerData(players, updateVdo, socket) {
   // Handle host
   hostId = players[0].id;
   const hostIframe = document.getElementById("hostIframe");
   const hostName = document.getElementById("hostName");
   if (hostIframe && hostName) {
-    hostIframe.src = `https://vdo.ninja/?view=${hostId}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+    if (updateVdo) {
+      hostIframe.src = `https://vdo.ninja/?view=${hostId}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+    }
     hostName.textContent = players[0]?.name || "Pulpo a la gallega";
   }
   pointsContainer.innerHTML = "";
@@ -125,9 +137,22 @@ function handlePlayerData(players) {
       }, 500);
     }
 
-    if (playerName && playerIframe) {
+    if (playerName) {
       playerName.innerText = player.name;
+    }
+    if (playerIframe && updateVdo) {
       playerIframe.src = `https://vdo.ninja/?view=${player.id}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1`;
+    }
+  });
+
+  players.forEach((player) => {
+    if (player.id === playerId) {
+      console.log(player.name)
+      if (player.id === players[0].id && player.name.includes("Pulpo a la gallega")) {
+        promptForUsername(socket);
+      } else if (player.name.includes("Jugador")) {
+        promptForUsername(socket);
+      }
     }
   });
 }
@@ -358,6 +383,8 @@ async function handleGameReset() {
             reel.remove();
             genericImage.style.zIndex = "2";
             genericImage.style.opacity = "1";
+
+            genericImage.style.transition = "none";
 
             setTimeout(() => {
               resolve();

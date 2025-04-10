@@ -42,10 +42,13 @@ async function registerSocketHandlers(socket, io) {
 
   socket.on("general:getData", () => sendGeneralData(socket));
 
-  socket.on("player:getAllPlayersData", () => getAllPlayersData(socket));
+  socket.on("player:getAllPlayersData", () => getAllPlayersData(socket, true, false));
+  socket.on("player:setName", async (name) => {
+    handleNameChange(io, socket.playerId, name);
+  });
 
-  socket.on("game:reset", async () => resetGameData(socket));
-  socket.on("game:spin", async () => gameSpin(socket));
+  socket.on("game:reset", async () => resetGameData(io));
+  socket.on("game:spin", async () => gameSpin(io));
 }
 
 //! Funciones auxiliares del socket
@@ -64,10 +67,14 @@ async function sendGameData(socket) {
   socket.emit("game:returnGameData", gameData);
 }
 
-async function getAllPlayersData(socket) {
+async function getAllPlayersData(socket, updateVdo, isNameChange) {
   const db = dbase.getDatabase();
   const players = db.data.players;
-  socket.emit("player:returnAllPlayersData", players);
+  if(isNameChange) {
+    socket.emit("player:returnPlayerNameChange", { players: players, updateVdo: updateVdo });
+  } else {
+    socket.emit("player:returnAllPlayersData", { players: players, updateVdo: updateVdo });
+  }
 }
 
 async function resetGameData(socket) {
@@ -88,7 +95,7 @@ async function gameSpin(socket) {
   }
 
   const selected = getRandomImages(remainingImages, 4);
-  const hasMoreRounds = (remainingImages.length - 4) >= 4;
+  const hasMoreRounds = remainingImages.length - 4 >= 4;
   const currentRound = (data.currentRound || 0) + 1;
   const spinData = selected.map((finalImage, index) => {
     const fillerImages = getRandomImages(
@@ -100,11 +107,23 @@ async function gameSpin(socket) {
     return fillerImages;
   });
 
-  socket.emit("game:returnSpin", { spinData, selected, hasMoreRounds, currentRound, remainingImages: remainingImages.length - 4 });
+  socket.emit("game:returnSpin", {
+    spinData,
+    selected,
+    hasMoreRounds,
+    currentRound,
+    remainingImages: remainingImages.length - 4,
+  });
 
   dbase.updateSelectedImages(selected);
   dbase.updateRemainingImages();
   dbase.updateCurrentRound();
+}
+
+async function handleNameChange(socket, playerId, name) {
+  await dbase.updatePlayerName(playerId, name.name).then(async () => {
+    await getAllPlayersData(socket, false, true);
+  });
 }
 
 //! Funciones auxiliares generales

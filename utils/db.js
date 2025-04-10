@@ -122,9 +122,10 @@ export async function getPlayerInfo(playerId) {
 }
 
 export async function updatePlayerName(playerId, name) {
+  console.log("Updating player name:", playerId, name);
   const player = db.data.players.find((p) => p.id === playerId);
   if (player) {
-    player.name = name;
+    player.name = typeof name === "string" ? name : player.name;
     await db.write();
   }
 }
