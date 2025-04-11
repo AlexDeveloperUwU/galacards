@@ -114,10 +114,13 @@ function handleReturnedData(data, socket) {
 
   const currentPlayerPosition = game.currentPlayer;
   if (currentPlayerPosition) {
+    if (game.assignedScores.length === 0) {
+      spinButton.setAttribute("disabled", true);
+    }
     const cardContainer = document.getElementById(`cardContainer${currentPlayerPosition}`);
     const iframeContainer = document.getElementById(`player${currentPlayerPosition}iframe`);
 
-    const currentHighlightedCard = document.querySelector(".shadow-glow.scale-\\[1\\.04\\]");
+    const currentHighlightedCard = document.querySelector(".shadow-glow .scale-\\[1\\.04\\]");
     if (currentHighlightedCard) {
       currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
     }
@@ -185,6 +188,9 @@ function handlePlayerData(players, updateVdo, socket) {
 
 function handleGameData(game) {
   if (game.selectedImages) {
+    if (game.assignedScores.length > 0) {
+      spinButton.setAttribute("disabled", true);
+    }
     const selectedImages = game.selectedImages;
     selectedImages.forEach((imageName, index) => {
       const cardContainer = cardContainers[index];
@@ -216,7 +222,7 @@ function handleGameData(game) {
   if (currentPlayer) {
     applyStylesToCurrentPlayer(currentPlayer);
   } else {
-    const currentHighlightedCard = document.querySelector(".shadow-glow .scale-\\[1.04\\]");
+    const currentHighlightedCard = document.querySelector(".shadow-glow .scale-\\[1\\.04\\]");
     if (currentHighlightedCard) {
       currentHighlightedCard.classList.remove("shadow-glow", "scale-[1.04]");
     }
@@ -290,7 +296,7 @@ async function handleSpinData(spinData, selected, hasMoreRounds, cRound, remaini
     name.classList.remove("revealed");
   }
 
-  spinButton.removeAttribute("disabled");
+  socket.emit("game:setCurrentPlayer");
   turnButton.removeAttribute("disabled");
 }
 
@@ -446,15 +452,11 @@ async function handleGameReset() {
 }
 
 function applyStylesToCurrentPlayer(playerId) {
-  console.log("Aplicando estilos al jugador actual:", playerId);
-
-  // Eliminar estilos previos
   const currentHighlightedElements = document.querySelectorAll(".shadow-glow.scale-\\[1\\.04\\]");
   currentHighlightedElements.forEach((element) => {
     element.classList.remove("shadow-glow", "scale-[1.04]");
   });
 
-  // Aplicar estilos al jugador actual
   if (playerId) {
     const cardContainer = document.getElementById(`cardContainer${playerId}`);
     const iframeContainer = document.getElementById(`player${playerId}iframe`);
@@ -471,6 +473,52 @@ function applyStylesToCurrentPlayer(playerId) {
 
 function handleApplyCurrentRound(data) {
   applyStylesToCurrentPlayer(data.playerId);
+}
+
+////////////////////////////////////////////////////
+//
+// Sección de manejo de puntuaciones
+//
+///////////////////////////////////////////////////
+
+document.querySelectorAll('[id^="player"]').forEach((container) => {
+  if (container.id.includes("iframe")) {
+    container.parentElement.addEventListener("click", () => {
+      if (container.classList.contains("shadow-glow") && container.classList.contains("scale-[1.04]")) {
+        const iframeSrc = container.src;
+        const urlParams = new URLSearchParams(iframeSrc.split("?")[1]);
+        const playerIdVdo = urlParams.get("view");
+        console.log("ID del jugador:", playerIdVdo);
+
+        if (!playerIdVdo) {
+          console.error("No se pudo obtener el playerIdVdo del iframe.");
+          return;
+        }
+
+        const playerIndex = container.id.match(/player(\d+)iframe/)[1];
+        const playerNameElement = document.getElementById(`playerName${playerIndex}`);
+        const playerName = playerNameElement ? playerNameElement.textContent : "Desconocido";
+
+        socket.emit("game:getAssignedScores", { playerIndex });
+        socket.once("game:returnAssignedScores", (data) => {
+          if (data.assignedScores.includes(playerIdVdo)) {
+            console.log("Ya has asignado puntos a este jugador.");
+            return;
+          }
+          if (data.assignedScores.length === 0) {
+            confirmPointsAssignment(playerIdVdo, playerName, 1);
+          }
+          if (data.assignedScores.length === 1) {
+            confirmPointsAssignment(playerIdVdo, playerName, 0.5);
+          }
+        });
+      }
+    });
+  }
+});
+
+function sendScoreUpdate(playerIdFunc) {
+  socket.emit("game:setAssignedScores", { playerIdFunc });
 }
 
 ////////////////////////////////////////////////////

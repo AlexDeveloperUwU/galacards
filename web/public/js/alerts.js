@@ -4,11 +4,32 @@
 //
 ///////////////////////////////////////////////////
 
-////////////////////////////////////////////////////
-//
-// Alertas utilizadas de forma general
-//
-///////////////////////////////////////////////////
+function confirmPointsAssignment(playerId, playerName, points) {
+  const pointText = points === 1 ? "punto" : "puntos";
+
+  Swal.fire({
+    title: "¿Estás COMPLETAMENTE segura?",
+    html: `¿Quieres darle <b>${points} ${pointText}</b> a <b>${playerName}</b> y no le has dado un missclick por "accidente"?`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Venga dale que ha acertao!",
+    cancelButtonText: "Oops, creo que metí la pata",
+    customClass: {
+      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[100%] max-w-md",
+      title: "text-3xl text-white font-bold mb-4 text-center",
+      htmlContainer: "text-white text-lg",
+      confirmButton:
+        "mt-4 w-full py-2 bg-purple-light text-purple-dark text-base font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md",
+      cancelButton:
+        "mt-2 w-full py-2 bg-red-500 text-white text-base font-bold rounded-lg hover:bg-red-600 transition-colors duration-300 shadow-md",
+    },
+  }).then((result) => {
+    if (result.isConfirmed) {
+      console.log("Se le han dado puntos al jugador", playerId);
+      sendScoreUpdate(playerId);
+    }
+  });
+}
 
 function displayPlayerLinks(players) {
   const contentHtml = players
@@ -34,7 +55,7 @@ function displayPlayerLinks(players) {
     title: "Info jugadores",
     html: contentHtml,
     customClass: {
-      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[30%]",
+      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[100%]",
       title: "text-3xl text-white font-bold mb-4 text-center",
       htmlContainer: "space-y-4",
       confirmButton:
@@ -62,6 +83,12 @@ function displayPlayerLinks(players) {
   });
 }
 
+////////////////////////////////////////////////////
+//
+// Alertas utilizadas de forma general
+//
+///////////////////////////////////////////////////
+
 function promptForUsername(socket) {
   Swal.fire({
     title: "Escribe tu nombre :D",
@@ -78,7 +105,7 @@ function promptForUsername(socket) {
     showCancelButton: false,
     confirmButtonText: "Yep, esa persona soy yo!",
     customClass: {
-      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[90%] max-w-md",
+      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[100%] max-w-md",
       title: "text-3xl text-white font-bold mb-4 text-center",
       input: "text-purple-dark text-lg font-bold p-2 rounded-lg border-2 border-purple-light",
       confirmButton:

@@ -62,8 +62,12 @@ async function registerSocketHandlers(socket, io) {
         io.emit("game:returnCurrentPlayer", { playerId: data });
       })
   );
-  socket.on("game:getCurrentScores", async () => cosita());
-  socket.on("game:setCurrentScores", async () => cosita());
+
+  socket.on("game:getAssignedScores", async () => {
+    const data = await dbase.getAssignedScores(playerId);
+    socket.emit("game:returnAssignedScores", { assignedScores: data });
+  });
+  socket.on("game:setAssignedScores", async (data) => handleScoreAddition(data));
 }
 
 //! Funciones auxiliares del socket
@@ -146,6 +150,13 @@ async function handleNameChange(socket, playerId, name) {
   await dbase.updatePlayerName(playerId, name.name).then(async () => {
     await getAllPlayersData(socket, false, true);
   });
+}
+
+async function handleScoreAddition(data) {
+  const playerId = data.playerIdFunc;
+  console.log("Se le han dado puntos al jugador", data);
+  await dbase.addScore(playerId)
+  
 }
 
 //! Funciones auxiliares generales

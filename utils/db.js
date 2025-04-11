@@ -104,6 +104,7 @@ export async function generateGameData() {
     db.data.game.gameState = "waiting";
     db.data.game.currentPlayer = null;
     db.data.game.assignedScores = [];
+    await setAllPlayerScores(0);
     await db.write();
   } catch (err) {
     console.error("Error leyendo el directorio de imágenes:", err);
@@ -172,17 +173,33 @@ export async function updateCurrentRound() {
 //
 ///////////////////////////////////////////////////
 
+export async function addScore(playerId) {
+  const player = db.data.players.find((p) => p.id === playerId);
+  console.log("Adding score to player:", playerId, player);
+  const actualScores = db.data.game.assignedScores || [];
+  if (actualScores.length === 0) {
+    console.log("Adding 1 score to player:", playerId, player);
+    player.score += 1;
+    actualScores.push(playerId);
+    db.write();
+  } 
+
+  if (actualScores.length === 1) {
+    console.log("Adding 0.5 score to player:", playerId, player);
+    player.score += 0.5;
+    actualScores.push(playerId);
+    db.write();
+  }
+
+  if (actualScores.length === 2) {
+    return;
+  }
+  db.write();
+}
+
 export async function getPlayerScore(playerId) {
   const player = db.data.players.find((p) => p.id === playerId);
   return player ? player.score : 0;
-}
-
-export async function setPlayerScore(playerId, score) {
-  const player = db.data.players.find((p) => p.id === playerId);
-  if (player) {
-    player.score = score;
-    await db.write();
-  }
 }
 
 export async function setAllPlayerScores(score) {
@@ -198,6 +215,17 @@ export async function getAllPlayerScores() {
     score: typeof score === "object" ? score.score || 0 : score || 0,
   }));
 }
+
+export async function getAssignedScores () {
+  return db.data.game.assignedScores || [];
+};
+
+
+////////////////////////////////////////////////////
+//
+// Sección de gestión de los turnos
+//
+///////////////////////////////////////////////////
 
 export async function getCurrentPlayer() {
   const players = db.data.players.slice(1, 5); 
