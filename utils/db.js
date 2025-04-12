@@ -112,6 +112,12 @@ export async function generateGameData() {
   }
 }
 
+export async function resetAfterSpin() {
+  db.data.game.currentPlayer = null;
+  db.data.game.assignedScores = [];
+  db.write();
+}
+
 ////////////////////////////////////////////////////
 //
 // Sección de gestión de jugadores
@@ -124,6 +130,10 @@ export async function getPlayerInfo(playerId) {
     throw new Error("Player not found");
   }
   return player;
+}
+
+export async function getAllPlayers() {
+  return db.data.players || [];
 }
 
 export async function updatePlayerName(playerId, name) {
@@ -175,26 +185,23 @@ export async function updateCurrentRound() {
 
 export async function addScore(playerId) {
   const player = db.data.players.find((p) => p.id === playerId);
-  console.log("Adding score to player:", playerId, player);
+  if (!player) return;
+
   const actualScores = db.data.game.assignedScores || [];
+  
+  if (actualScores.length >= 2) return;
+
   if (actualScores.length === 0) {
-    console.log("Adding 1 score to player:", playerId, player);
     player.score += 1;
     actualScores.push(playerId);
-    db.write();
   } 
-
-  if (actualScores.length === 1) {
-    console.log("Adding 0.5 score to player:", playerId, player);
+  else if (actualScores.length === 1) {
     player.score += 0.5;
     actualScores.push(playerId);
-    db.write();
   }
 
-  if (actualScores.length === 2) {
-    return;
-  }
-  db.write();
+  db.data.game.assignedScores = actualScores;
+  await db.write();
 }
 
 export async function getPlayerScore(playerId) {

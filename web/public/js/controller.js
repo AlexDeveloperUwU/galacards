@@ -86,6 +86,10 @@ socket.on("game:returnSpin", async (data) => {
   await handleSpinData(spinData, selected, hasMoreRounds, currentRound, remainingImages);
 });
 
+socket.on("game:returnScore", (data) => {
+  handleReturnedScore(data);
+});
+
 socket.on("game:returnCurrentPlayer", (data) => {
   handleApplyCurrentRound(data);
 });
@@ -116,6 +120,11 @@ function handleReturnedData(data, socket) {
   if (currentPlayerPosition) {
     if (game.assignedScores.length === 0) {
       spinButton.setAttribute("disabled", true);
+    } else {
+      spinButton.removeAttribute("disabled");
+    }
+    if (game.assignedScores.length >= 2) {
+      turnButton.setAttribute("disabled", true);
     }
     const cardContainer = document.getElementById(`cardContainer${currentPlayerPosition}`);
     const iframeContainer = document.getElementById(`player${currentPlayerPosition}iframe`);
@@ -263,6 +272,11 @@ function preloadImages(imageArray) {
 async function handleSpinData(spinData, selected, hasMoreRounds, cRound, remainingImages) {
   spinButton.setAttribute("disabled", true);
   turnButton.setAttribute("disabled", true);
+  const elementsWithEffects = document.querySelectorAll(".shadow-glow, .scale-\\[1\\.04\\]");
+  elementsWithEffects.forEach((element) => {
+    element.classList.remove("shadow-glow", "scale-[1.04]");
+  });
+
   currentRound.textContent = cRound;
   avaliableCards.textContent = remainingImages;
   if (!hasMoreRounds) {
@@ -441,6 +455,11 @@ async function handleGameReset() {
     name.textContent = ["¿Conseguirás", "adivinar", "quién", "eres?"][index];
   });
 
+  const elementsWithEffects = document.querySelectorAll(".shadow-glow, .scale-\\[1\\.04\\]");
+  elementsWithEffects.forEach((element) => {
+    element.classList.remove("shadow-glow", "scale-[1.04]");
+  });
+
   for (const name of cardNames) {
     name.classList.add("revealed");
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -488,7 +507,6 @@ document.querySelectorAll('[id^="player"]').forEach((container) => {
         const iframeSrc = container.src;
         const urlParams = new URLSearchParams(iframeSrc.split("?")[1]);
         const playerIdVdo = urlParams.get("view");
-        console.log("ID del jugador:", playerIdVdo);
 
         if (!playerIdVdo) {
           console.error("No se pudo obtener el playerIdVdo del iframe.");
@@ -502,7 +520,6 @@ document.querySelectorAll('[id^="player"]').forEach((container) => {
         socket.emit("game:getAssignedScores", { playerIndex });
         socket.once("game:returnAssignedScores", (data) => {
           if (data.assignedScores.includes(playerIdVdo)) {
-            console.log("Ya has asignado puntos a este jugador.");
             return;
           }
           if (data.assignedScores.length === 0) {
@@ -519,6 +536,20 @@ document.querySelectorAll('[id^="player"]').forEach((container) => {
 
 function sendScoreUpdate(playerIdFunc) {
   socket.emit("game:setAssignedScores", { playerIdFunc });
+}
+
+function handleReturnedScore(data) {
+  spinButton.removeAttribute("disabled");
+  const { playerId, score } = data;
+  const scoreElement = document.getElementById(`score-${playerId}`);
+  if (scoreElement) {
+    scoreElement.classList.remove("score-update");
+    scoreElement.classList.add("score-update");
+    scoreElement.textContent = score;
+    setTimeout(() => {
+      scoreElement.classList.remove("score-update");
+    }, 500);
+  }
 }
 
 ////////////////////////////////////////////////////

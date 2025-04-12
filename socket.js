@@ -50,6 +50,11 @@ async function registerSocketHandlers(socket, io) {
 
   socket.on("game:reset", async () => resetGameData(io));
   socket.on("game:spin", async () => gameSpin(io));
+  socket.on("game:setAssignedScores", async (data) => handleScoreAddition(data, io));
+  socket.on("game:getAssignedScores", async () => {
+    const data = await dbase.getAssignedScores(playerId);
+    socket.emit("game:returnAssignedScores", { assignedScores: data });
+  });
   socket.on("game:getCurrentPlayer", async () => {
     const data = await dbase.getCurrentPlayer();
     socket.emit("game:returnCurrentPlayer", { playerId: data });
@@ -62,12 +67,6 @@ async function registerSocketHandlers(socket, io) {
         io.emit("game:returnCurrentPlayer", { playerId: data });
       })
   );
-
-  socket.on("game:getAssignedScores", async () => {
-    const data = await dbase.getAssignedScores(playerId);
-    socket.emit("game:returnAssignedScores", { assignedScores: data });
-  });
-  socket.on("game:setAssignedScores", async (data) => handleScoreAddition(data));
 }
 
 //! Funciones auxiliares del socket
@@ -107,9 +106,14 @@ async function resetGameData(socket) {
   await dbase.generateGameData();
   sendGameData(socket);
   socket.emit("game:returnReset");
+  const players = await dbase.getAllPlayers();
+  for (const player of players) {
+    socket.emit("game:returnScore", { playerId: player.id, score: 0 });
+  }
 }
 
 async function gameSpin(socket) {
+  await dbase.resetAfterSpin();
   const data = await dbase.getGameState();
   const imageList = data.images || [];
   const remainingImages = data.remainingImages || [];
@@ -152,11 +156,11 @@ async function handleNameChange(socket, playerId, name) {
   });
 }
 
-async function handleScoreAddition(data) {
+async function handleScoreAddition(data, socket) {
   const playerId = data.playerIdFunc;
-  console.log("Se le han dado puntos al jugador", data);
-  await dbase.addScore(playerId)
-  
+  await dbase.addScore(playerId);
+  const score = await dbase.getPlayerScore(playerId);
+  socket.emit("game:returnScore", { playerId: playerId, score: score });
 }
 
 //! Funciones auxiliares generales

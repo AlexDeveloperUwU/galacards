@@ -25,7 +25,9 @@ function confirmPointsAssignment(playerId, playerName, points) {
     },
   }).then((result) => {
     if (result.isConfirmed) {
-      console.log("Se le han dado puntos al jugador", playerId);
+      if(points === 0.5) {
+        turnButton.setAttribute("disabled", true);
+      }
       sendScoreUpdate(playerId);
     }
   });
