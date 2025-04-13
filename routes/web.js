@@ -35,10 +35,6 @@ const isHostOrPlayer = (req, res, next) => {
   return res.redirect("/error/403");
 };
 
-router.get("/v1", (req, res) => {
-  res.render("v1", { title: `${config.gameName} | Versión 1`, gameTitle: config.gameName });
-});
-
 router.get("/", (req, res) => {
   res.render("index", { title: `Inicio | ${config.gameName}`, gameTitle: config.gameName });
 });
