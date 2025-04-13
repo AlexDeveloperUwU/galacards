@@ -1,7 +1,19 @@
-const CACHE_NAME = "cache-v1";
+const CACHE_NAME = "cache-v1.0.2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
+  event.waitUntil(
+    fetch("/images")
+      .then((response) => response.json())
+      .then(async (imageList) => {
+        const imageUrls = imageList.map((imageName) => `/public/images/${imageName}`);
+        const cache = await caches.open(CACHE_NAME);
+        return await cache.addAll(imageUrls);
+      })
+      .catch((error) => {
+        console.error("Error precargando imágenes:", error);
+      })
+  );
 });
 
 self.addEventListener("fetch", (event) => {
@@ -33,11 +45,6 @@ self.addEventListener("fetch", (event) => {
           .catch((error) => {
             console.error("Error al obtener recurso:", event.request.url, error);
 
-            if (event.request.destination === "document") {
-              return caches.match("/index.html");
-            }
-
-            // Respuesta predeterminada para otros tipos de solicitudes
             return new Response("Contenido no disponible", {
               status: 503,
               statusText: "Servicio no disponible",
@@ -48,37 +55,20 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
-self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "CLEAR_CACHE") {
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName.startsWith("cache-")) {
-            return caches.delete(cacheName);
-          }
-        })
-      ).then(() => {
-        console.log("Caché limpiado manualmente.");
-      });
-    });
-  }
-});
-
 self.addEventListener("activate", (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then(async (cacheNames) => {
+      await Promise.all(
         cacheNames.map((cacheName) => {
           if (!cacheWhitelist.includes(cacheName)) {
             return caches.delete(cacheName);
           }
         })
-      ).then(() => {
-        self.clients.matchAll({ type: "window" }).then((clients) => {
-          clients.forEach((client) => {
-            client.navigate(client.url);
-          });
+      );
+      self.clients.matchAll({ type: "window" }).then((clients) => {
+        clients.forEach((client) => {
+          client.navigate(client.url);
         });
       });
     })

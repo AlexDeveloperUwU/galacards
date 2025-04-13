@@ -36,23 +36,23 @@ const isHostOrPlayer = (req, res, next) => {
 };
 
 router.get("/v1", (req, res) => {
-  res.render("v1", { title: `${config.gameName} | Versión 1` });
+  res.render("v1", { title: `${config.gameName} | Versión 1`, gameTitle: config.gameName });
 });
 
 router.get("/", (req, res) => {
-  res.render("index", { title: `Inicio | ${config.gameName}` });
+  res.render("index", { title: `Inicio | ${config.gameName}`, gameTitle: config.gameName });
 });
 
 router.get("/overlay", (req, res) => {
-  res.render("overlay", { title: `Overlay | ${config.gameName}` });
+  res.render("overlay", { title: `Overlay | ${config.gameName}`, gameTitle: config.gameName });
 });
 
 router.get("/controller", isHost, (req, res) => {
-  res.render("controller", { title: `Control | ${config.gameName}` });
+  res.render("controller", { title: `Control | ${config.gameName}`, gameTitle: config.gameName });
 });
 
 router.get("/player", isHostOrPlayer, (req, res) => {
-  res.render("player", { title: `Juego | ${config.gameName}` });
+  res.render("player", { title: `Juego | ${config.gameName}`, gameTitle: config.gameName });
 });
 
 router.get("/sw.js", (req, res) => {

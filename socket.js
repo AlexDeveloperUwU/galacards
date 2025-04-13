@@ -8,7 +8,7 @@ async function initializeSocket(server) {
 
   io.use(authenticateSocket);
   io.on("connection", (socket) => {
-    console.log(`Cliente autenticado. Socket ID: ${socket.id} Player ID: ${socket.playerId}`);
+    console.log(`Cliente autenticado. Auth ID: ${socket.playerId}`);
     registerSocketHandlers(socket, io);
   });
 }
@@ -20,6 +20,12 @@ function authenticateSocket(socket, next) {
   if (!playerId) {
     console.log("Desconectando: falta el ID de autenticación");
     socket.disconnect(true);
+    return;
+  }
+
+  if (playerId === "obs") {
+    socket.playerId = playerId;
+    next();
     return;
   }
 

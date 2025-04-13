@@ -227,6 +227,12 @@ function handleGameData(game) {
   document.getElementById("roundNumber").textContent = game.currentRound;
   document.getElementById("totalRounds").textContent = game.totalRounds;
 
+  if(game.remainingImages.length === "0"){
+    spinButton.setAttribute("disabled", true);
+    spinButton.textContent = "Reset";
+    spinButton.setAttribute("disabled", false);
+  }
+
   const currentPlayer = game.currentPlayer;
   if (currentPlayer) {
     applyStylesToCurrentPlayer(currentPlayer);
@@ -297,11 +303,27 @@ async function handleSpinData(spinData, selected, hasMoreRounds, cRound, remaini
     cardNames[i].textContent = formattedName;
   }
 
+  audio.volume = 1.0;
+  audio.play();
+
   const spinPromises = spinData.map((reelData, index) => {
     const cardContainer = cardContainers[index];
     return spinContainer(index, cardContainer, reelData);
   });
   await Promise.all(spinPromises);
+
+  const fadeOutInterval = setInterval(() => {
+    if (audio.volume > 0.1) {
+      audio.volume -= 0.1;
+    } else {
+      audio.volume = 0.0;
+      clearInterval(fadeOutInterval);
+    }
+  }, 100);
+  setTimeout(() => {
+    audio.pause();
+    audio.currentTime = 0;
+  }, 600);
 
   for (const name of cardNames) {
     name.classList.add("revealed");
@@ -356,9 +378,6 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
     initialImage.style.opacity = "0";
     initialImage.style.position = "absolute";
 
-    audio.volume = 1.0;
-    audio.play();
-
     function animateReel() {
       currentPosition += imageHeight / 5;
       if (currentPosition >= totalHeight) {
@@ -373,18 +392,6 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
         setTimeout(() => {
           strip.style.transition = "none";
           strip.style.transform = `translateY(-${finalPosition}px)`;
-          const fadeOutInterval = setInterval(() => {
-            if (audio.volume > 0.1) {
-              audio.volume -= 0.1;
-            } else {
-              audio.volume = 0.0;
-              clearInterval(fadeOutInterval);
-            }
-          }, 100);
-          setTimeout(() => {
-            audio.pause();
-            audio.currentTime = 0;
-          }, 600);
           resolve();
         }, 600);
       } else {
