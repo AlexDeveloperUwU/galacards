@@ -8,6 +8,7 @@ const queryParams = new URLSearchParams(window.location.search);
 const playerId = queryParams.get("id");
 const isDevMode = queryParams.get("dev") === "true";
 const audio = new Audio("/public/sounds/wheel.wav");
+const turnAudio = new Audio("/public/sounds/turn.mp3");
 let hostId = null;
 
 const cardContainers = [
@@ -484,6 +485,8 @@ function applyStylesToCurrentPlayer(playerId) {
   });
 
   if (playerId) {
+    turnAudio.volume = 1.0;
+    turnAudio.play();
     const cardContainer = document.getElementById(`cardContainer${playerId}`);
     const iframeContainer = document.getElementById(`player${playerId}iframe`);
 

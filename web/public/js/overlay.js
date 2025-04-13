@@ -449,6 +449,8 @@ function applyStylesToCurrentPlayer(playerId) {
   });
 
   if (playerId) {
+    turnAudio.volume = 1.0;
+    turnAudio.play();
     const cardContainer = document.getElementById(`cardContainer${playerId}`);
     const iframeContainer = document.getElementById(`player${playerId}iframe`);
 
