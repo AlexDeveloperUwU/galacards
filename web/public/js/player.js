@@ -41,7 +41,7 @@ const totalRounds = document.getElementById("totalRounds");
 window.onload = () => {
   document.getElementById("background-video").playbackRate = 0.5;
   audio.loop = true;
-  /*
+
   document.addEventListener("copy", (e) => {
     e.preventDefault();
     console.warn("Copy functionality is disabled.");
@@ -58,10 +58,13 @@ window.onload = () => {
       (e.ctrlKey && e.shiftKey && e.key === "I") || // Ctrl+Shift+I
       (e.ctrlKey && e.shiftKey && e.key === "J") || // Ctrl+Shift+J
       (e.ctrlKey && e.key === "U") || // Ctrl+U
-      (e.ctrlKey && e.shiftKey && e.key === "C") // Ctrl+Shift+C
+      (e.ctrlKey && e.shiftKey && e.key === "C") || // Ctrl+Shift+C
+      (e.ctrlKey && e.key === "R") || // Ctrl+R
+      (e.ctrlKey && e.key === "F5") || // Ctrl+F5
+      e.key === "F5" // F5
     ) {
       e.preventDefault();
-      console.warn("Developer tools are disabled.");
+      console.warn("Developer tools and page reload are disabled.");
     }
   });
 
@@ -69,7 +72,17 @@ window.onload = () => {
     e.preventDefault();
     console.warn("Text selection is disabled.");
   });
-  */
+
+  window.addEventListener("beforeunload", (e) => {
+    e.preventDefault();
+    console.warn("Page reload is disabled.");
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      console.warn("Page visibility change detected. Reload prevention active.");
+    }
+  });
 };
 
 ////////////////////////////////////////////////////
