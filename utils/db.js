@@ -182,20 +182,28 @@ export async function updateCurrentRound() {
 // Sección de gestión de las puntuaciones
 //
 ///////////////////////////////////////////////////
-
 export async function addScore(playerId) {
+  if (playerId === "0") {
+    const actualScores = db.data.game.assignedScores || [];
+    if (actualScores.length < 2) {
+      actualScores.push(playerId);
+      db.data.game.assignedScores = actualScores;
+      await db.write();
+    }
+    return;
+  }
+
   const player = db.data.players.find((p) => p.id === playerId);
   if (!player) return;
 
   const actualScores = db.data.game.assignedScores || [];
-  
+
   if (actualScores.length >= 2) return;
 
   if (actualScores.length === 0) {
     player.score += 1;
     actualScores.push(playerId);
-  } 
-  else if (actualScores.length === 1) {
+  } else if (actualScores.length === 1) {
     player.score += 0.5;
     actualScores.push(playerId);
   }
@@ -223,10 +231,9 @@ export async function getAllPlayerScores() {
   }));
 }
 
-export async function getAssignedScores () {
+export async function getAssignedScores() {
   return db.data.game.assignedScores || [];
-};
-
+}
 
 ////////////////////////////////////////////////////
 //
@@ -235,7 +242,7 @@ export async function getAssignedScores () {
 ///////////////////////////////////////////////////
 
 export async function getCurrentPlayer() {
-  const players = db.data.players.slice(1, 5); 
+  const players = db.data.players.slice(1, 5);
   const currentPlayerId = db.data.game.currentPlayer;
 
   if (!currentPlayerId) {
@@ -243,7 +250,7 @@ export async function getCurrentPlayer() {
   }
 
   const currentIndex = players.findIndex((p) => p.id === currentPlayerId);
-  return currentIndex !== -1 ? currentIndex + 1 : null; 
+  return currentIndex !== -1 ? currentIndex + 1 : null;
 }
 
 export async function setCurrentPlayer() {
@@ -255,7 +262,7 @@ export async function setCurrentPlayer() {
   } else {
     const currentIndex = players.findIndex((p) => p.id === currentPlayer);
     if (currentIndex === -1 || currentIndex === players.length - 1) {
-      db.data.game.currentPlayer = null; 
+      db.data.game.currentPlayer = null;
     } else {
       db.data.game.currentPlayer = players[currentIndex + 1]?.id || null;
     }
@@ -263,4 +270,3 @@ export async function setCurrentPlayer() {
 
   await db.write();
 }
-

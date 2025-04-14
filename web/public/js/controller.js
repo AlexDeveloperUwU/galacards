@@ -121,8 +121,12 @@ function handleReturnedData(data, socket) {
   if (currentPlayerPosition) {
     if (game.assignedScores.length === 0) {
       spinButton.setAttribute("disabled", true);
+    } else if (game.assignedScores.length === 1) {
+      spinButton.removeAttribute("disabled");
+      spinButton.textContent = "Reveal!";
     } else {
       spinButton.removeAttribute("disabled");
+      spinButton.textContent = "Spin!";
     }
     if (game.assignedScores.length >= 2) {
       turnButton.setAttribute("disabled", true);
@@ -406,6 +410,7 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
 async function handleGameReset() {
   spinButton.setAttribute("disabled", true);
   turnButton.setAttribute("disabled", true);
+  spinButton.textContent = "Spin!";
 
   for (const name of cardNames) {
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -546,6 +551,16 @@ document.querySelectorAll('[id^="player"]').forEach((container) => {
 
 function sendScoreUpdate(playerIdFunc) {
   socket.emit("game:setAssignedScores", { playerIdFunc });
+  socket.emit("game:getAssignedScores");
+  socket.once("game:returnAssignedScores", (data) => {
+    const assignedScores = data.assignedScores;
+    if (assignedScores.length === 1) {
+      spinButton.textContent = "Reveal!";
+    }
+    if (assignedScores.length >= 2) {
+      spinButton.textContent = "Spin!";
+    }
+  });
 }
 
 function handleReturnedScore(data) {
@@ -575,6 +590,9 @@ document.getElementById("getPlayerLinks").addEventListener("click", () => {
 spinButton.addEventListener("click", () => {
   if (spinButton.textContent === "Reset") {
     socket.emit("game:reset");
+    spinButton.textContent = "Spin!";
+  } else if (spinButton.textContent === "Reveal!") {
+    socket.emit("game:setAssignedScores", { playerIdFunc: "0" });
     spinButton.textContent = "Spin!";
   } else {
     socket.emit("game:spin");

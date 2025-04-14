@@ -90,16 +90,6 @@ socket.on("connect", () => {
   socket.emit("general:getData");
 });
 
-socket.on("player:returnAllPlayersData", (data) => {
-  const { players, updateVdo } = data;
-  handlePlayerData(players, updateVdo, socket);
-});
-
-socket.on("player:returnPlayerNameChange", (data) => {
-  const { players, updateVdo } = data;
-  handlePlayerData(players, updateVdo, socket);
-});
-
 socket.on("general:returnData", (data) => {
   handleReturnedData(data, socket);
 });
@@ -123,6 +113,16 @@ socket.on("game:returnCurrentPlayer", (data) => {
 
 socket.on("game:returnReset", async () => {
   handleGameReset();
+});
+
+socket.on("player:returnAllPlayersData", (data) => {
+  const { players, updateVdo } = data;
+  handlePlayerData(players, updateVdo, socket);
+});
+
+socket.on("player:returnPlayerNameChange", (data) => {
+  const { players, updateVdo } = data;
+  handlePlayerData(players, updateVdo, socket);
 });
 
 ////////////////////////////////////////////////////
@@ -416,13 +416,11 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
 }
 
 async function handleGameReset() {
-  // Asegurarse de que todos los nombres sean visibles al principio
   cardNames.forEach((name) => {
     name.classList.remove("blurCardName");
     name.classList.remove("revealed");
   });
 
-  // Aplicar el efecto de blur a todos los nombres, incluyendo el del jugador logueado
   for (const [index, name] of cardNames.entries()) {
     await new Promise((resolve) => setTimeout(resolve, 400));
     name.classList.add("blurCardName");
@@ -475,18 +473,15 @@ async function handleGameReset() {
     })
   );
 
-  // Restaurar los textos iniciales
   cardNames.forEach((name, index) => {
     name.textContent = ["¿Conseguirás", "adivinar", "quién", "eres?"][index];
   });
 
-  // Quitar efectos visuales previos
   const elementsWithEffects = document.querySelectorAll(".shadow-glow, .scale-\\[1\\.04\\]");
   elementsWithEffects.forEach((element) => {
     element.classList.remove("shadow-glow", "scale-[1.04]");
   });
 
-  // Aplicar la animación de revelado a todos los nombres
   for (const name of cardNames) {
     name.classList.add("revealed");
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -526,39 +521,42 @@ function handleReturnedScore(data) {
   socket.once("game:returnAssignedScores", (assignedScores) => {
     const playerNameElement = cardNames[playerPosition - 1];
     const { playerId: playerAuth, score } = data;
+    console.log(data)
     const scoreElement = document.getElementById(`score-${playerAuth}`);
-    if (scoreElement) {
-      scoreElement.textContent = score;
-      scoreElement.classList.remove("score-update");
-      void scoreElement.offsetWidth;
-      scoreElement.classList.add("score-update");
-      setTimeout(() => {
+    if (scoreElement || playerAuth === "0") {
+      if (scoreElement) {
+        scoreElement.textContent = score;
         scoreElement.classList.remove("score-update");
-      }, 500);
+        void scoreElement.offsetWidth;
+        scoreElement.classList.add("score-update");
+        setTimeout(() => {
+          scoreElement.classList.remove("score-update");
+        }, 500);
+      }
 
       if (
-        (playerAuth === playerId || assignedScores.assignedScores.length === 2) &&
+        (playerAuth === playerId || playerAuth === "0" || assignedScores.assignedScores.length === 2) &&
         playerNameElement.classList.contains("blurCardName")
       ) {
         if (playerNameElement) {
           playerNameElement.classList.add("revealed");
           setTimeout(() => {
-        playerNameElement.classList.remove("blurCardName", "revealed");
+            playerNameElement.classList.remove("blurCardName", "revealed");
           }, 400);
 
           const cardContainer = cardContainers[playerPosition - 1];
           const strip = cardContainer.querySelector(".strip");
           if (strip) {
-        const imageHeight = strip.firstChild.clientHeight;
-        const finalPosition = (strip.childElementCount - 1) * imageHeight;
+            const imageHeight = strip.firstChild.clientHeight;
+            const finalPosition = (strip.childElementCount - 1) * imageHeight;
 
-        strip.style.transition = "transform 0.6s ease-out";
-        strip.style.transform = `translateY(-${finalPosition}px)`;
+            strip.style.transition = "transform 0.6s ease-out";
+            strip.style.transform = `translateY(-${finalPosition}px)`;
 
-        setTimeout(() => {
-          strip.style.transition = "none";
-          strip.style.transform = `translateY(-${finalPosition}px)`;
-        }, 600);
+            setTimeout(() => {
+              strip.style.transition = "none";
+              strip.style.transform = `translateY(-${finalPosition}px)`;
+            }, 600);
           }
         }
       }
