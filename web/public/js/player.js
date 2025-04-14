@@ -10,6 +10,7 @@ const isDevMode = queryParams.get("dev") === "true";
 const audio = new Audio("/public/sounds/wheel.wav");
 const turnAudio = new Audio("/public/sounds/turn.mp3");
 let hostId = null;
+let playerPosition = null;
 
 const cardContainers = [
   document.getElementById("cardContainer1"),
@@ -40,6 +41,35 @@ const totalRounds = document.getElementById("totalRounds");
 window.onload = () => {
   document.getElementById("background-video").playbackRate = 0.5;
   audio.loop = true;
+  /*
+  document.addEventListener("copy", (e) => {
+    e.preventDefault();
+    console.warn("Copy functionality is disabled.");
+  });
+
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    console.warn("Right-click is disabled.");
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (
+      e.key === "F12" || // F12
+      (e.ctrlKey && e.shiftKey && e.key === "I") || // Ctrl+Shift+I
+      (e.ctrlKey && e.shiftKey && e.key === "J") || // Ctrl+Shift+J
+      (e.ctrlKey && e.key === "U") || // Ctrl+U
+      (e.ctrlKey && e.shiftKey && e.key === "C") // Ctrl+Shift+C
+    ) {
+      e.preventDefault();
+      console.warn("Developer tools are disabled.");
+    }
+  });
+
+  document.addEventListener("selectstart", (e) => {
+    e.preventDefault();
+    console.warn("Text selection is disabled.");
+  });
+  */
 };
 
 ////////////////////////////////////////////////////
@@ -148,6 +178,9 @@ function handlePlayerData(players, updateVdo, socket) {
 
   // Handle players
   players.slice(1).forEach((player, index) => {
+    if (player.id === playerId) {
+      playerPosition = index + 1;
+    }
     const playerName = document.getElementById(`playerName${index + 1}`);
     const playerIframe = document.getElementById(`player${index + 1}iframe`);
     pointsContainer.innerHTML += `
@@ -294,23 +327,30 @@ async function handleSpinData(spinData, selected) {
     audio.currentTime = 0;
   }, 600);
 
-  for (const name of cardNames) {
-    name.classList.add("revealed");
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    name.addEventListener(
-      "transitionend",
-      () => {
-        name.classList.remove("blurCardName");
-        name.classList.remove("revealed");
-      },
-      { once: true }
-    );
+  for (const [index, name] of cardNames.entries()) {
+    if (index + 1 !== playerPosition) {
+      name.classList.add("revealed");
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      name.addEventListener(
+        "transitionend",
+        () => {
+          name.classList.remove("blurCardName");
+          name.classList.remove("revealed");
+        },
+        { once: true }
+      );
+    }
   }
 }
 
 async function spinContainer(cardContainerNumber, cardContainer, reelData) {
   return new Promise((resolve) => {
     const initialImage = document.getElementById(`cardGenerica${cardContainerNumber + 1}`);
+    if (cardContainerNumber + 1 === playerPosition) {
+      const winningCard = reelData[reelData.length - 1];
+      reelData[reelData.length - 1] = "GENERAL.avif";
+      reelData.push(winningCard);
+    }
 
     const oldStrip = cardContainer.querySelector(".strip");
     if (oldStrip) {
@@ -326,11 +366,12 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
     }
 
     let currentPosition = 0;
-    const totalImages = 16;
+    const totalImages = cardContainerNumber + 1 === playerPosition ? 17 : 16;
     const imageHeight = initialImage.clientHeight;
     const imageWidth = initialImage.clientWidth;
     const totalHeight = totalImages * imageHeight;
-    const finalPosition = (totalImages - 1) * imageHeight;
+    const finalPosition =
+      cardContainerNumber + 1 === playerPosition ? (totalImages - 2) * imageHeight : (totalImages - 1) * imageHeight;
 
     const strip = document.createElement("div");
     strip.style.width = `${imageWidth}px`;
@@ -375,7 +416,14 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
 }
 
 async function handleGameReset() {
-  for (const name of cardNames) {
+  // Asegurarse de que todos los nombres sean visibles al principio
+  cardNames.forEach((name) => {
+    name.classList.remove("blurCardName");
+    name.classList.remove("revealed");
+  });
+
+  // Aplicar el efecto de blur a todos los nombres, incluyendo el del jugador logueado
+  for (const [index, name] of cardNames.entries()) {
     await new Promise((resolve) => setTimeout(resolve, 400));
     name.classList.add("blurCardName");
   }
@@ -427,15 +475,18 @@ async function handleGameReset() {
     })
   );
 
+  // Restaurar los textos iniciales
   cardNames.forEach((name, index) => {
     name.textContent = ["¿Conseguirás", "adivinar", "quién", "eres?"][index];
   });
 
+  // Quitar efectos visuales previos
   const elementsWithEffects = document.querySelectorAll(".shadow-glow, .scale-\\[1\\.04\\]");
   elementsWithEffects.forEach((element) => {
     element.classList.remove("shadow-glow", "scale-[1.04]");
   });
 
+  // Aplicar la animación de revelado a todos los nombres
   for (const name of cardNames) {
     name.classList.add("revealed");
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -470,17 +521,49 @@ function handleApplyCurrentRound(data) {
 }
 
 function handleReturnedScore(data) {
-  const { playerId, score } = data;
-  const scoreElement = document.getElementById(`score-${playerId}`);
-  if (scoreElement) {
-    scoreElement.textContent = score;
-    scoreElement.classList.remove("score-update");
-    void scoreElement.offsetWidth; 
-    scoreElement.classList.add("score-update");
-    setTimeout(() => {
+  socket.emit("game:getAssignedScores");
+
+  socket.once("game:returnAssignedScores", (assignedScores) => {
+    const playerNameElement = cardNames[playerPosition - 1];
+    const { playerId: playerAuth, score } = data;
+    const scoreElement = document.getElementById(`score-${playerAuth}`);
+    if (scoreElement) {
+      scoreElement.textContent = score;
       scoreElement.classList.remove("score-update");
-    }, 500);
-  } else {
-    console.warn(`Score element for player ${playerId} not found.`);
-  }
+      void scoreElement.offsetWidth;
+      scoreElement.classList.add("score-update");
+      setTimeout(() => {
+        scoreElement.classList.remove("score-update");
+      }, 500);
+
+      if (
+        (playerAuth === playerId || assignedScores.assignedScores.length === 2) &&
+        playerNameElement.classList.contains("blurCardName")
+      ) {
+        if (playerNameElement) {
+          playerNameElement.classList.add("revealed");
+          setTimeout(() => {
+        playerNameElement.classList.remove("blurCardName", "revealed");
+          }, 400);
+
+          const cardContainer = cardContainers[playerPosition - 1];
+          const strip = cardContainer.querySelector(".strip");
+          if (strip) {
+        const imageHeight = strip.firstChild.clientHeight;
+        const finalPosition = (strip.childElementCount - 1) * imageHeight;
+
+        strip.style.transition = "transform 0.6s ease-out";
+        strip.style.transform = `translateY(-${finalPosition}px)`;
+
+        setTimeout(() => {
+          strip.style.transition = "none";
+          strip.style.transform = `translateY(-${finalPosition}px)`;
+        }, 600);
+          }
+        }
+      }
+    } else {
+      console.warn(`Score element for player ${playerId} not found.`);
+    }
+  });
 }

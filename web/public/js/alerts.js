@@ -57,7 +57,7 @@ function displayPlayerLinks(players) {
     title: "Info jugadores",
     html: contentHtml,
     customClass: {
-      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[100%]",
+      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[100%]  max-w-md",
       title: "text-3xl text-white font-bold mb-4 text-center",
       htmlContainer: "space-y-4",
       confirmButton:
