@@ -1,5 +1,10 @@
 import { Server } from "socket.io";
 import * as dbase from "./utils/db.js";
+import { sendDiscordWebhook } from "send-discord-webhook";
+import { readFile } from "fs/promises";
+
+const data = await readFile("./config/config.json", "utf-8");
+const config = JSON.parse(data);
 
 //! Inicialización del Socket
 async function initializeSocket(server) {
@@ -7,15 +12,17 @@ async function initializeSocket(server) {
   const io = new Server(server);
 
   io.use(authenticateSocket);
-  io.on("connection", (socket) => {
+  io.on("connection", async (socket) => {
     console.log(`Cliente autenticado. Auth ID: ${socket.playerId}`);
+
+    await handleConnection(socket, io, "connect");
     registerSocketHandlers(socket, io);
   });
 }
 
 //! Middleware de autenticación
 function authenticateSocket(socket, next) {
-  const playerId = socket.handshake.auth.id;
+  let playerId = socket.handshake.auth.id;
 
   if (!playerId) {
     console.log("Desconectando: falta el ID de autenticación");
@@ -23,14 +30,16 @@ function authenticateSocket(socket, next) {
     return;
   }
 
-  if (playerId === "obs") {
+  const basePlayerId = playerId.replace("-ac", "");
+
+  if (basePlayerId === "obs") {
     socket.playerId = playerId;
     next();
     return;
   }
 
   const db = dbase.getDatabase();
-  const player = db.data.players.find((p) => p.id === playerId);
+  const player = db.data.players.find((p) => p.id === basePlayerId);
   if (!player) {
     console.log(`Desconectando: ID de autenticación no válido (${playerId})`);
     socket.disconnect(true);
@@ -73,6 +82,13 @@ async function registerSocketHandlers(socket, io) {
         io.emit("game:returnCurrentPlayer", { playerId: data });
       })
   );
+
+  socket.on("ac:getAllConnected", () => sendAllConnectedAc(socket));
+
+  socket.on("disconnect", async () => {
+    console.log(`Cliente desconectado. Auth ID: ${socket.playerId}`);
+    await handleConnection(socket, io, "disconnect");
+  });
 }
 
 //! Funciones auxiliares del socket
@@ -173,6 +189,73 @@ async function handleScoreAddition(data, socket) {
 function getRandomImages(remainingImages, count) {
   const shuffled = remainingImages.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
+}
+
+//! Funciones de conexión y desconexión
+
+async function handleConnection(socket, io, type) {
+  const players = await dbase.getAllPlayers();
+  if (socket.playerId !== "obs" && socket.playerId !== players[0].id) {
+    if (type === "connect") {
+      const basePlayerId = socket.playerId.replace("-ac", ""); 
+      const player = players.find((p) => p.id === basePlayerId);
+      const playerName = player ? player.name : "Desconocido";
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      if (socket.playerId.includes("-ac")) {
+        /*
+        await sendDiscordWebhook({
+          url: config.djsWebhook,
+          content: `El anticheat del jugador con ID ${socket.playerId} (${playerName}) se ha conectado. (Timestamp: <t:${timestamp}:T>)`,
+        });
+        */
+        io.emit("ac:playerCheatClean", {playerId: basePlayerId})
+      } else {
+        /*
+        await sendDiscordWebhook({
+          url: config.djsWebhook,
+          content: `Jugador con ID ${socket.playerId} (${playerName}) se ha conectado. (Timestamp: <t:${timestamp}:T>)`,
+        });
+        */
+      }
+    }
+    if (type === "disconnect") {
+      const basePlayerId = socket.playerId.replace("-ac", ""); 
+      const player = players.find((p) => p.id === basePlayerId);
+      const playerName = player ? player.name : "Desconocido";
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      if (socket.playerId.includes("-ac")) {
+        /*
+        await sendDiscordWebhook({
+          url: config.djsWebhook,
+          content: `El anticheat del jugador con ID ${socket.playerId} (${playerName}) se ha desconectado. (Timestamp: <t:${timestamp}:T>)`,
+        });
+        */
+        io.emit("ac:playerCheatDetected", {playerId: basePlayerId})
+      } else {
+        /*
+        await sendDiscordWebhook({
+          url: config.djsWebhook,
+          content: `Jugador con ID ${socket.playerId} (${playerName}) se ha desconectado. (Timestamp: <t:${timestamp}:T>)`,
+        });
+        */
+      }
+    }
+  }
+}
+
+function sendAllConnectedAc(socket) {
+  const connectedClients = [];
+  const sockets = Array.from(socket.server.sockets.sockets.values());
+
+  sockets.forEach((clientSocket) => {
+    if (clientSocket.playerId && clientSocket.playerId.includes("-ac")) {
+      connectedClients.push(clientSocket.playerId);
+    }
+  });
+
+  socket.emit("ac:returnAllConnected", { connectedClients });
 }
 
 export default initializeSocket;

@@ -9,6 +9,7 @@ const playerId = queryParams.get("id");
 const isDevMode = queryParams.get("dev") === "true";
 const audio = new Audio("/public/sounds/wheel.wav");
 const turnAudio = new Audio("/public/sounds/turn.mp3");
+const pointsAudio = new Audio("/public/sounds/points.mp3");
 let hostId = null;
 
 const cardContainers = [
@@ -58,6 +59,7 @@ socket.on("connect", () => {
   }
 
   socket.emit("general:getData");
+  socket.emit("ac:getAllConnected");
 });
 
 socket.on("player:returnLinks", (data) => {
@@ -98,6 +100,10 @@ socket.on("game:returnCurrentPlayer", (data) => {
 socket.on("game:returnReset", async () => {
   handleGameReset();
 });
+
+socket.on("ac:playerCheatDetected", (data) => changeAnticheat(data.playerId, true));
+socket.on("ac:playerCheatClean", (data) => changeAnticheat(data.playerId, false));
+socket.on("ac:returnAllConnected", (data) => handleConnectedAnticheats(data));
 
 ////////////////////////////////////////////////////
 //
@@ -183,6 +189,7 @@ function handlePlayerData(players, updateVdo, socket) {
 
     if (playerName) {
       playerName.innerText = player.name;
+      playerName.setAttribute("data-id", player.id);
     }
     if (playerIframe && updateVdo) {
       playerIframe.src = `https://vdo.ninja/?view=${player.id}&bitrate=10000&aspectratio=0.75167&autoplay=1&controls=0&muted=1&noaudio=1&cleanoutput`;
@@ -232,7 +239,7 @@ function handleGameData(game) {
   document.getElementById("roundNumber").textContent = game.currentRound;
   document.getElementById("totalRounds").textContent = game.totalRounds;
 
-  if(game.remainingImages.length === "0"){
+  if (game.remainingImages.length === "0") {
     spinButton.setAttribute("disabled", true);
     spinButton.textContent = "Reset";
     spinButton.setAttribute("disabled", false);
@@ -566,6 +573,10 @@ function sendScoreUpdate(playerIdFunc) {
 function handleReturnedScore(data) {
   spinButton.removeAttribute("disabled");
   const { playerId, score } = data;
+  if (playerId !== "0") {
+    pointsAudio.volume = 1.0;
+    pointsAudio.play();
+  }
   const scoreElement = document.getElementById(`score-${playerId}`);
   if (scoreElement) {
     scoreElement.classList.remove("score-update");
@@ -602,3 +613,32 @@ spinButton.addEventListener("click", () => {
 turnButton.addEventListener("click", () => {
   socket.emit("game:setCurrentPlayer");
 });
+
+////////////////////////////////////////////////////
+//
+// Sección de manejo de anticheat
+//
+///////////////////////////////////////////////////
+
+function changeAnticheat(playerIdAC, boolean) {
+  // false = anticheat clean, no cheat detected
+  // true = anticheat dirty, cheat detected
+
+  const playerNameElement = document.querySelector(`[data-id="${playerIdAC}"]`);
+  if (playerNameElement) {
+    if (boolean) {
+      playerNameElement.classList.remove("text-white");
+      playerNameElement.classList.add("text-red-500");
+    } else {
+      playerNameElement.classList.remove("text-red-500");
+      playerNameElement.classList.add("text-white");
+    }
+  }
+}
+
+function handleConnectedAnticheats(data) {
+  data.connectedClients.forEach((player) => {
+    const playerId = player.replace("-ac", "");
+    changeAnticheat(playerId, false);
+  });
+}
