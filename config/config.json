@@ -1,5 +1,6 @@
 {
   "gameUrl": "http://localhost:3000",
   "gamePort": 3000,
-  "gameName": "¿Quién soy? - 2ª edición!"
+  "gameName": "¿Quién soy? - 2ª edición!",
+  "djsWebhook": "https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 }
