@@ -5,3 +5,4 @@ services:
       - "3006:3000"
     volumes:
       - ./config:/app/config
+      - ./data:/app/data
