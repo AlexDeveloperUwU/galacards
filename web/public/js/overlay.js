@@ -9,6 +9,7 @@ const playerId = queryParams.get("id");
 const isDevMode = queryParams.get("dev") === "true";
 const audio = new Audio("/public/sounds/wheel.wav");
 const turnAudio = new Audio("/public/sounds/turn.mp3");
+const pointsAudio = new Audio("/public/sounds/points.mp3");
 let hostId = null;
 
 const cardContainers = [
@@ -471,16 +472,20 @@ function handleApplyCurrentRound(data) {
 
 function handleReturnedScore(data) {
   const { playerId, score } = data;
-  const scoreElement = document.getElementById(`score-${playerId}`);
-  if (scoreElement) {
-    scoreElement.textContent = score;
-    scoreElement.classList.remove("score-update");
-    void scoreElement.offsetWidth; 
-    scoreElement.classList.add("score-update");
-    setTimeout(() => {
+  if (playerId !== "0") {
+    const scoreElement = document.getElementById(`score-${playerId}`);
+    if (scoreElement) {
+      scoreElement.textContent = score;
       scoreElement.classList.remove("score-update");
-    }, 500);
-  } else {
-    console.warn(`Score element for player ${playerId} not found.`);
+      void scoreElement.offsetWidth;
+      scoreElement.classList.add("score-update");
+      pointsAudio.volume = 1.0;
+      pointsAudio.play();
+      setTimeout(() => {
+        scoreElement.classList.remove("score-update");
+      }, 500);
+    } else {
+      console.warn(`Score element for player ${playerId} not found.`);
+    }
   }
 }

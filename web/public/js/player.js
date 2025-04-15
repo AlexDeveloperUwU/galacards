@@ -9,6 +9,7 @@ const playerId = queryParams.get("id");
 const isDevMode = queryParams.get("dev") === "true";
 const audio = new Audio("/public/sounds/wheel.wav");
 const turnAudio = new Audio("/public/sounds/turn.mp3");
+const pointsAudio = new Audio("/public/sounds/points.mp3");
 let hostId = null;
 let playerPosition = null;
 
@@ -71,11 +72,6 @@ window.onload = () => {
   document.addEventListener("selectstart", (e) => {
     e.preventDefault();
     console.warn("Text selection is disabled.");
-  });
-
-  window.addEventListener("beforeunload", (e) => {
-    e.preventDefault();
-    console.warn("Page reload is disabled.");
   });
 
   document.addEventListener("visibilitychange", () => {
@@ -542,6 +538,10 @@ function handleReturnedScore(data) {
         scoreElement.classList.remove("score-update");
         void scoreElement.offsetWidth;
         scoreElement.classList.add("score-update");
+        if (playerAuth !== "0") {
+          pointsAudio.volume = 1.0;
+          pointsAudio.play();
+        }
         setTimeout(() => {
           scoreElement.classList.remove("score-update");
         }, 500);
