@@ -603,6 +603,7 @@ spinButton.addEventListener("click", () => {
     socket.emit("game:reset");
     spinButton.textContent = "Spin!";
   } else if (spinButton.textContent === "Reveal!") {
+    turnButton.setAttribute("disabled", true);
     socket.emit("game:setAssignedScores", { playerIdFunc: "0" });
     spinButton.textContent = "Spin!";
   } else {
