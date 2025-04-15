@@ -15,7 +15,10 @@ async function initializeSocket(server) {
   io.on("connection", async (socket) => {
     console.log(`Cliente autenticado. Auth ID: ${socket.playerId}`);
 
-    await handleConnection(socket, io, "connect");
+    // Ejecuta handleConnection de forma asíncrona sin bloquear el flujo
+    handleConnection(socket, io, "connect").catch(console.error);
+
+    // Continúa inmediatamente con el registro de manejadores
     registerSocketHandlers(socket, io);
   });
 }
@@ -84,6 +87,7 @@ async function registerSocketHandlers(socket, io) {
   );
 
   socket.on("ac:getAllConnected", () => sendAllConnectedAc(socket));
+  socket.on("ac:youtubeDetected", async (data) => handleYouTubeDetected(data, socket));
 
   socket.on("disconnect", async () => {
     console.log(`Cliente desconectado. Auth ID: ${socket.playerId}`);
@@ -196,50 +200,40 @@ function getRandomImages(remainingImages, count) {
 async function handleConnection(socket, io, type) {
   const players = await dbase.getAllPlayers();
   if (socket.playerId !== "obs" && socket.playerId !== players[0].id) {
-    if (type === "connect") {
-      const basePlayerId = socket.playerId.replace("-ac", ""); 
-      const player = players.find((p) => p.id === basePlayerId);
-      const playerName = player ? player.name : "Desconocido";
-      const timestamp = Math.floor(Date.now() / 1000);
+    const basePlayerId = socket.playerId.replace("-ac", "");
+    const player = players.find((p) => p.id === basePlayerId);
+    const playerName = player ? player.name : "Desconocido";
+    const timestamp = Math.floor(Date.now() / 1000);
 
+    if (type === "connect") {
       if (socket.playerId.includes("-ac")) {
-        /*
-        await sendDiscordWebhook({
+        sendDiscordWebhook({
           url: config.djsWebhook,
           content: `El anticheat del jugador con ID ${socket.playerId} (${playerName}) se ha conectado. (Timestamp: <t:${timestamp}:T>)`,
-        });
-        */
-        io.emit("ac:playerCheatClean", {playerId: basePlayerId})
+        }).catch(console.error);
+
+        io.emit("ac:playerCheatClean", { playerId: basePlayerId });
       } else {
-        /*
-        await sendDiscordWebhook({
+        sendDiscordWebhook({
           url: config.djsWebhook,
           content: `Jugador con ID ${socket.playerId} (${playerName}) se ha conectado. (Timestamp: <t:${timestamp}:T>)`,
-        });
-        */
+        }).catch(console.error);
       }
     }
-    if (type === "disconnect") {
-      const basePlayerId = socket.playerId.replace("-ac", ""); 
-      const player = players.find((p) => p.id === basePlayerId);
-      const playerName = player ? player.name : "Desconocido";
-      const timestamp = Math.floor(Date.now() / 1000);
 
+    if (type === "disconnect") {
       if (socket.playerId.includes("-ac")) {
-        /*
-        await sendDiscordWebhook({
+        sendDiscordWebhook({
           url: config.djsWebhook,
           content: `El anticheat del jugador con ID ${socket.playerId} (${playerName}) se ha desconectado. (Timestamp: <t:${timestamp}:T>)`,
-        });
-        */
-        io.emit("ac:playerCheatDetected", {playerId: basePlayerId})
+        }).catch(console.error);
+
+        io.emit("ac:playerCheatDetected", { playerId: basePlayerId });
       } else {
-        /*
-        await sendDiscordWebhook({
+        sendDiscordWebhook({
           url: config.djsWebhook,
           content: `Jugador con ID ${socket.playerId} (${playerName}) se ha desconectado. (Timestamp: <t:${timestamp}:T>)`,
-        });
-        */
+        }).catch(console.error);
       }
     }
   }
@@ -256,6 +250,21 @@ function sendAllConnectedAc(socket) {
   });
 
   socket.emit("ac:returnAllConnected", { connectedClients });
+}
+
+async function handleYouTubeDetected(data, socket) {
+  const players = await dbase.getAllPlayers();
+  const playerId = socket.playerId.replace("-ac", "");
+  const player = players.find((p) => p.id === playerId);
+  const playerName = player ? player.name : "Desconocido";
+  const timestamp = Math.floor(Date.now() / 1000);
+
+  await sendDiscordWebhook({
+    url: config.djsWebhook,
+    content: `El jugador ${playerName} (${socket.playerId}) ha abierto YouTube. [(URL)](${data.url}) (Timestamp: <t:${timestamp}:T>)`,
+  });
+
+  socket.emit("ac:returnYouTubeDetected", { playerId });
 }
 
 export default initializeSocket;
