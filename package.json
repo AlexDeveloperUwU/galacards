@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node main.js",
     "dev": "npx nodemon --ignore data main.js",
-    "devReset": "npx nodemon --ignore data main.js dataReset"
+    "devReset": "npx nodemon --ignore data main.js resetData"
   },
   "author": "AlexDeveloperUwU",
   "dependencies": {
