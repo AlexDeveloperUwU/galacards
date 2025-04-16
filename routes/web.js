@@ -51,6 +51,10 @@ router.get("/player", isHostOrPlayer, (req, res) => {
   res.render("player", { title: `Juego | ${config.gameName}`, gameTitle: config.gameName });
 });
 
+router.get("/list", (req, res) => {
+  res.render("list", { title: `Listado | ${config.gameName}`, gameTitle: config.gameName });
+});
+
 router.get("/anticheat", (req, res) => {
   const filePath = path.join(__dirname, "..", "web", "public", "files", "QueSoyAntiCheat.crx");
   res.download(filePath, "QueSoyAntiCheat.crx", (err) => {
