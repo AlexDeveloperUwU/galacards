@@ -77,7 +77,7 @@ async function generatePlayerData(gameBaseUrl) {
     const pId = nanoid();
     const player = {
       id: pId,
-      playerUrl: `${gameBaseUrl}/player?id=${pId}`,
+      playerUrl: `${gameBaseUrl}/?id=${pId}`,
       vdoUrl: `https://vdo.ninja/?push=${pId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1&device=1`,
       name: `Jugador ${i}`,
       score: 0,
