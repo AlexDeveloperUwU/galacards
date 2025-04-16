@@ -538,7 +538,7 @@ function handleReturnedScore(data) {
         scoreElement.classList.remove("score-update");
         void scoreElement.offsetWidth;
         scoreElement.classList.add("score-update");
-        if (playerAuth !== "0") {
+        if (playerAuth !== "0" || score !== 0) {
           pointsAudio.volume = 1.0;
           pointsAudio.play();
         }

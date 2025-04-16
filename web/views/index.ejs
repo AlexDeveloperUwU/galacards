@@ -2,7 +2,63 @@
 <html lang="es">
 <%- include('components/head') %>
 
-<body>
+<link rel="stylesheet" href="/public/css/vid.css">
+
+<body class="min-h-screen p-6 md:p-8 flex flex-col items-center justify-center">
+  <video id="background-video" autoplay muted loop playbackRate="0.5">
+    <source src="/public/vids/bg.webm" type="video/webm">
+    Tu navegador no soporta el elemento de video.
+  </video>
+
+  <h1 class="text-5xl md:text-6xl text-white font-bold mb-10 animate-glow tracking-wider"><%= gameTitle %></h1>
+
+  <div id="slide-container" class="w-full max-w-7xl mx-auto rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm bg-opacity-90 bg-purple-bg p-4 md:p-6 text-white text-center">
+    <div id="slide-start" class="slide mx-auto w-[90%] p-4 md:p-6 text-left">
+      <h2 class="text-3xl md:text-3xl font-bold text-purple-light mb-6 text-center">¡Hola, bienvenida/o a!</h2>
+      <p class="text-lg md:text-xl text-purple-hover mb-4 text-center">
+        ¡Te damos la bienvenida a una edición especial de "¿Quién soy?" con un giro único: todos los personajes son VTubers! Cada jugador tendrá un turno para hacer preguntas y descubrir qué VTuber tiene asignado. Pero ojo, solo tienes dos intentos para adivinar, ¡así que elige bien tus preguntas!
+      </p>
+      <br>
+      <p class="text-lg md:text-xl text-purple-hover mb-4 text-center">
+        Este juego está diseñado para que te diviertas, te rías y descubras nuevos VTubers. Cualquier comentario o sugerencia será valioso para mejorar en el futuro. ¡Disfruta al máximo, pregunta si tienes dudas y pásalo genial!
+      </p>
+      <p class="text-2xl md:text-3xl font-bold mt-8 text-center text-purple-light animate-pulse">
+        ¡A JUGAR! <span class="text-pink-400">&lt;3</span>
+      </p>
+    </div>
+    <div id="slide-1" class="slide hidden mx-auto w-[90%] p-4 md:p-6">
+      <h2 class="text-3xl md:text-3xl font-bold text-purple-light mb-6 text-center">Normas de la dinámica</h2>
+      <div class="text-center mx-auto max-w-6xl text-purple-hover space-y-4 text-sm md:text-xl">
+        <p>En cada turno, solo puedes hacer una pregunta para intentar descubrir quién eres.</p>
+        <p>No está permitido abusar de preguntas "trampa" que puedan romper la dinámica del juego.</p>
+        <p>Tienes un máximo de 2 intentos para adivinar correctamente quién eres.</p>
+        <p>La primera persona que adivine correctamente gana 1 punto, y la segunda 0,5 puntos.</p>
+        <p>No hagas trampas ni mires el directo de Gala para obtener pistas.</p>
+        <p>Si necesitas más información, puedes usar Google o cualquier otra herramienta.</p>
+        <p>Si lo prefieres, puedes apuntar tus preguntas en un block de notas para organizarte mejor.</p>
+        <p>Cuando creas saber la respuesta, espera al siguiente turno para confirmar tu respuesta.</p>
+      </div>
+    </div>
+    <div id="slide-end" class="slide hidden mx-auto w-[90%]">
+      <h2 class="text-3xl md:text-3xl font-bold text-purple-light mb-6 text-center">AntiCheat</h2>
+      <div class="text-center mx-auto max-w-6xl text-purple-hover space-y-4 text-sm md:text-xl">
+        <p>Por precaución y para que el juego sea mucho más justo, hemos decidido implementar un sistema de anticheat para los jugadores, permitiendo así que todo el mundo tenga las mismas oportunidades de ganar.</p>
+        <p>Este anticheat es obligatorio tenerlo instalado y funcional durante todo el juego. Su función es muy sencilla, evitar que entreis en YouTube durante todo el juego. Al finalizar la dinámica, podeis desinstalarlo tranquilamente.</p>
+        <p>Para poder continuar, debes tener el anticheat instalado y debe estar conectado, si no el juego no te dejará avanzar para entrar a la vista de jugador y comenzar.</p>
+        <p>Si crees que está listo, por favor, haz click en el siguiente botón. Se harán las comprobaciones necesarias y si está todo correcto, se te llevará automáticamente a la vista del juego.</p>
+        <p>Si no tienes el anticheat listo, por favor, <span id="anticheatTutorial" class="underline text-blue-500 hover:text-blue-700 cursor-pointer">haz click aquí</span> para que se te abra un tutorial simple que te enseñará a ponerlo en funcionamiento rápidamente.</p>
+      </div>
+    </div>
+
+    <!-- Controles de navegación -->
+    <div class="mt-6 flex gap-4 justify-center">
+      <button id="prev-btn" class="px-4 py-2 bg-purple-light text-white rounded disabled:opacity-50 hover:bg-purple-hover" disabled>Anterior</button>
+      <button id="next-btn" class="px-4 py-2 bg-purple-light text-white rounded hover:bg-purple-hover">Siguiente</button>
+      <button id="vamos-btn" class="px-4 py-2 bg-pink-400 text-white rounded hidden">¡Vamos allá!</button>
+    </div>
+  </div>
+
+  <script src="/public/js/index.js"></script>
 
   <%- include('components/scripts') %>
 </body>

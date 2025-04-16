@@ -130,3 +130,36 @@ function promptForUsername(socket) {
     }
   });
 }
+
+function displayVideoEmbed() {
+  Swal.fire({
+    title: "Mira este video",
+    html: `<div style="position:relative; width:100%; height:0px; padding-bottom:56.250%"><iframe allow="fullscreen" allowfullscreen height="100%" src="https://streamable.com/e/l97z9o?" width="100%" style="border:none; width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden;"></iframe></div>`,
+    customClass: {
+      popup: "bg-[#8b458b] rounded-2xl p-8 shadow-2xl w-[100%] max-w-2xl",
+      title: "text-4xl text-white font-bold mb-6 text-center",
+      htmlContainer: "text-white text-lg",
+      confirmButton:
+        "mt-6 w-full py-3 bg-purple-light text-purple-dark text-lg font-bold rounded-lg hover:bg-purple-hover transition-colors duration-300 shadow-md", 
+    },
+    showConfirmButton: true,
+    confirmButtonText: "Cerrar",
+  });
+}
+
+function displayAnticheatError() {
+  Swal.fire({
+    title: "Error del Anticheat",
+    text: "El sistema anticheat no está funcionando correctamente. Por favor, inténtalo de nuevo.",
+    icon: "error",
+    customClass: {
+      popup: "bg-[#8b458b] rounded-2xl p-6 shadow-2xl w-[100%] max-w-md",
+      title: "text-3xl text-white font-bold mb-4 text-center",
+      htmlContainer: "text-white text-lg",
+      confirmButton:
+        "mt-4 w-full py-2 bg-red-500 text-white text-base font-bold rounded-lg hover:bg-red-600 transition-colors duration-300 shadow-md",
+    },
+    showConfirmButton: true,
+    confirmButtonText: "Entendido",
+  });
+}

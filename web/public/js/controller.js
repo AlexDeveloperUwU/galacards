@@ -573,7 +573,7 @@ function sendScoreUpdate(playerIdFunc) {
 function handleReturnedScore(data) {
   spinButton.removeAttribute("disabled");
   const { playerId, score } = data;
-  if (playerId !== "0") {
+  if (playerId !== "0" || score === 0) {
     pointsAudio.volume = 1.0;
     pointsAudio.play();
   }

@@ -479,8 +479,10 @@ function handleReturnedScore(data) {
       scoreElement.classList.remove("score-update");
       void scoreElement.offsetWidth;
       scoreElement.classList.add("score-update");
-      pointsAudio.volume = 1.0;
-      pointsAudio.play();
+      if(score !== 0){
+        pointsAudio.volume = 1.0;
+        pointsAudio.play();
+      }
       setTimeout(() => {
         scoreElement.classList.remove("score-update");
       }, 500);
