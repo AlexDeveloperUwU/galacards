@@ -8,7 +8,7 @@ const socket = io(window.location.host, {
 window.onload = () => {
   document.getElementById("background-video").playbackRate = 0.5;
 
-  const slideIds = ["slide-start", "slide-1", "slide-end"];
+  const slideIds = ["slide-start", "slide-end"];
   let currentSlide = 0;
 
   const updateSlide = () => {
@@ -47,25 +47,8 @@ window.onload = () => {
   };
 
   document.getElementById("vamos-btn").onclick = () => {
-    socket.emit("ac:getAllConnected");
+    window.location.href = `/player?id=${playerId}`;
   };
 
   updateSlide();
 };
-
-document.getElementById("anticheatTutorial").onclick = () => {
-  displayVideoEmbed();
-};
-
-socket.on("ac:returnAllConnected", (data) => {
-  console.log("Connected players:", data);
-  const isPlayerConnected = data.connectedClients.some(
-    (player) => player.replace("-ac", "") === playerId
-  );
-
-  if (isPlayerConnected) {
-    window.location.href = `/player?id=${playerId}`;
-  } else {
-    displayAnticheatError();
-  }
-});
