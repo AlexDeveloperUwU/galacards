@@ -1,4 +1,4 @@
-const CACHE_NAME = "cache-v1.0.7";
+const CACHE_NAME = "cache-v1.0.8";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -20,6 +20,10 @@ self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(event.request.url);
 
   if (requestUrl.protocol === "chrome-extension:") {
+    return;
+  }
+
+  if (requestUrl.pathname === "/list") {
     return;
   }
 

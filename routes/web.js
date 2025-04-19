@@ -52,6 +52,9 @@ router.get("/player", isHostOrPlayer, (req, res) => {
 });
 
 router.get("/list", (req, res) => {
+  if (!config.enableList) {
+    return res.redirect("/error/403");
+  }
   res.render("list", { title: `Listado | ${config.gameName}`, gameTitle: config.gameName });
 });
 
