@@ -33,16 +33,14 @@ function authenticateSocket(socket, next) {
     return;
   }
 
-  const basePlayerId = playerId.replace("-ac", "");
-
-  if (basePlayerId === "obs") {
+  if (playerId === "obs") {
     socket.playerId = playerId;
     next();
     return;
   }
 
   const db = dbase.getDatabase();
-  const player = db.data.players.find((p) => p.id === basePlayerId);
+  const player = db.data.players.find((p) => p.id === playerId);
   if (!player) {
     console.log(`Desconectando: ID de autenticación no válido (${playerId})`);
     socket.disconnect(true);
@@ -85,9 +83,6 @@ async function registerSocketHandlers(socket, io) {
         io.emit("game:returnCurrentPlayer", { playerId: data });
       })
   );
-
-  socket.on("ac:getAllConnected", () => sendAllConnectedAc(socket));
-  socket.on("ac:youtubeDetected", async (data) => handleYouTubeDetected(data, socket));
 
   socket.on("disconnect", async () => {
     console.log(`Cliente desconectado. Auth ID: ${socket.playerId}`);
@@ -200,71 +195,24 @@ function getRandomImages(remainingImages, count) {
 async function handleConnection(socket, io, type) {
   const players = await dbase.getAllPlayers();
   if (socket.playerId !== "obs" && socket.playerId !== players[0].id) {
-    const basePlayerId = socket.playerId.replace("-ac", "");
-    const player = players.find((p) => p.id === basePlayerId);
+    const player = players.find((p) => p.id === socket.playerId);
     const playerName = player ? player.name : "Desconocido";
     const timestamp = Math.floor(Date.now() / 1000);
 
     if (type === "connect") {
-      if (socket.playerId.includes("-ac")) {
-        sendDiscordWebhook({
-          url: config.djsWebhook,
-          content: `El anticheat del jugador con ID ${socket.playerId} (${playerName}) se ha conectado. (Timestamp: <t:${timestamp}:T>)`,
-        }).catch(console.error);
-
-        io.emit("ac:playerCheatClean", { playerId: basePlayerId });
-      } else {
-        sendDiscordWebhook({
-          url: config.djsWebhook,
-          content: `Jugador con ID ${socket.playerId} (${playerName}) se ha conectado. (Timestamp: <t:${timestamp}:T>)`,
-        }).catch(console.error);
-      }
+      sendDiscordWebhook({
+        url: config.djsWebhook,
+        content: `Jugador con ID ${socket.playerId} (${playerName}) se ha conectado. (Timestamp: <t:${timestamp}:T>)`,
+      }).catch(console.error);
     }
 
     if (type === "disconnect") {
-      if (socket.playerId.includes("-ac")) {
-        sendDiscordWebhook({
-          url: config.djsWebhook,
-          content: `El anticheat del jugador con ID ${socket.playerId} (${playerName}) se ha desconectado. (Timestamp: <t:${timestamp}:T>)`,
-        }).catch(console.error);
-
-        io.emit("ac:playerCheatDetected", { playerId: basePlayerId });
-      } else {
-        sendDiscordWebhook({
-          url: config.djsWebhook,
-          content: `Jugador con ID ${socket.playerId} (${playerName}) se ha desconectado. (Timestamp: <t:${timestamp}:T>)`,
-        }).catch(console.error);
-      }
+      sendDiscordWebhook({
+        url: config.djsWebhook,
+        content: `Jugador con ID ${socket.playerId} (${playerName}) se ha desconectado. (Timestamp: <t:${timestamp}:T>)`,
+      }).catch(console.error);
     }
   }
-}
-
-function sendAllConnectedAc(socket) {
-  const connectedClients = [];
-  const sockets = Array.from(socket.server.sockets.sockets.values());
-
-  sockets.forEach((clientSocket) => {
-    if (clientSocket.playerId && clientSocket.playerId.includes("-ac")) {
-      connectedClients.push(clientSocket.playerId);
-    }
-  });
-
-  socket.emit("ac:returnAllConnected", { connectedClients });
-}
-
-async function handleYouTubeDetected(data, socket) {
-  const players = await dbase.getAllPlayers();
-  const playerId = socket.playerId.replace("-ac", "");
-  const player = players.find((p) => p.id === playerId);
-  const playerName = player ? player.name : "Desconocido";
-  const timestamp = Math.floor(Date.now() / 1000);
-
-  await sendDiscordWebhook({
-    url: config.djsWebhook,
-    content: `El jugador ${playerName} (${socket.playerId}) ha abierto YouTube. [(URL)](${data.url}) (Timestamp: <t:${timestamp}:T>)`,
-  });
-
-  socket.emit("ac:returnYouTubeDetected", { playerId });
 }
 
 export default initializeSocket;

@@ -1,10 +1,6 @@
 const queryParams = new URLSearchParams(window.location.search);
 const playerId = queryParams.get("id");
 
-const socket = io(window.location.host, {
-  auth: { id: playerId },
-});
-
 window.onload = () => {
   document.getElementById("background-video").playbackRate = 0.5;
 
