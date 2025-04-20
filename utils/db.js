@@ -68,7 +68,7 @@ async function generatePlayerData(gameBaseUrl) {
 
   const host = {
     id: hostId,
-    vdoUrl: `https://vdo.ninja/?push=${hostId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1`,
+    vdoUrl: `https://vdo.ninja/?push=${hostId}&webcam&outboundvideobitrate=2000&maxvideobitrate=2000&maxbandwidth=10000&videobitrate=2000&quality=1&width=390&height=520&contenthint=motion&maxframerate=60&quality=1&stereo=1`,
     name: "Pulpo a la gallega",
   };
   db.data.players.push(host);
@@ -78,7 +78,7 @@ async function generatePlayerData(gameBaseUrl) {
     const player = {
       id: pId,
       playerUrl: `${gameBaseUrl}/?id=${pId}`,
-      vdoUrl: `https://vdo.ninja/?push=${pId}&webcam&bitrate=10000&aspectratio=0.75167&quality=1&stereo=1`,
+      vdoUrl: `https://vdo.ninja/?push=${pId}&webcam&bitrate=2000&quality=1&stereo=&codec=h264,vp8,vp9,av1&fadein`,
       name: `Jugador ${i}`,
       score: 0,
     };

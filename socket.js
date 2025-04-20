@@ -15,10 +15,8 @@ async function initializeSocket(server) {
   io.on("connection", async (socket) => {
     console.log(`Cliente autenticado. Auth ID: ${socket.playerId}`);
 
-    // Ejecuta handleConnection de forma asíncrona sin bloquear el flujo
     handleConnection(socket, io, "connect").catch(console.error);
 
-    // Continúa inmediatamente con el registro de manejadores
     registerSocketHandlers(socket, io);
   });
 }
