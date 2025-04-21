@@ -377,13 +377,11 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
     let currentPosition = 0;
     const totalImages = cardContainerNumber + 1 === playerPosition ? 17 : 16;
     const imageHeight = initialImage.clientHeight;
-    const imageWidth = initialImage.clientWidth;
     const totalHeight = totalImages * imageHeight;
     const finalPosition =
       cardContainerNumber + 1 === playerPosition ? (totalImages - 2) * imageHeight : (totalImages - 1) * imageHeight;
-
     const strip = document.createElement("div");
-    strip.style.width = `${imageWidth}px`;
+    strip.style.width = "100%";
     strip.style.height = `${totalHeight}px`;
     strip.className = "strip";
     reelData.forEach((img) => {
@@ -400,8 +398,8 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
     initialImage.style.opacity = "0";
     initialImage.style.position = "absolute";
 
-    function animateReel() {
-      currentPosition += imageHeight / 5;
+    const interval = setInterval(() => {
+      currentPosition += imageHeight / 8;
       if (currentPosition >= totalHeight) {
         currentPosition = 0;
       }
@@ -409,18 +407,15 @@ async function spinContainer(cardContainerNumber, cardContainer, reelData) {
       strip.style.transform = `translateY(-${currentPosition}px)`;
 
       if (currentPosition >= finalPosition - imageHeight && currentPosition <= finalPosition) {
+        clearInterval(interval);
         strip.style.transition = "transform 0.6s ease-out";
         strip.style.transform = `translateY(-${finalPosition}px)`;
         setTimeout(() => {
           strip.style.transition = "none";
-          strip.style.transform = `translateY(-${finalPosition}px)`;
           resolve();
         }, 600);
-      } else {
-        requestAnimationFrame(animateReel);
       }
-    }
-    animateReel();
+    }, 25);
   });
 }
 
@@ -530,7 +525,7 @@ function handleReturnedScore(data) {
   socket.once("game:returnAssignedScores", (assignedScores) => {
     const playerNameElement = cardNames[playerPosition - 1];
     const { playerId: playerAuth, score } = data;
-    console.log(data)
+    console.log(data);
     const scoreElement = document.getElementById(`score-${playerAuth}`);
     if (scoreElement || playerAuth === "0") {
       if (scoreElement) {
