@@ -236,19 +236,79 @@ function handleGameData(game) {
       initialImage.style.opacity = "0";
       initialImage.style.position = "absolute";
 
-      const currentImage = createImageElement(imageName);
-      currentImage.style.position = "absolute";
-      currentImage.style.top = "0";
-      currentImage.style.left = "0";
-      currentImage.style.width = "100%";
-      currentImage.style.height = "100%";
-      cardContainer.appendChild(currentImage);
+      if (index + 1 !== playerPosition) {
+        const currentImage = createImageElement(imageName);
+        currentImage.style.position = "absolute";
+        currentImage.style.top = "0";
+        currentImage.style.left = "0";
+        currentImage.style.width = "100%";
+        currentImage.style.height = initialImage.clientHeight;
+        cardContainer.appendChild(currentImage);
 
-      const formattedName = imageName
-        .split(".")[0]
-        .toLowerCase()
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-      cardNames[index].textContent = formattedName;
+        const formattedName = imageName
+          .split(".")[0]
+          .toLowerCase()
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+        cardNames[index].textContent = formattedName;
+      } else {
+        socket.emit("game:getAssignedScores");
+        socket.once("game:returnAssignedScores", (assignedScores) => {
+          const playerAssignedScores = assignedScores.assignedScores;
+
+          if (playerAssignedScores.length === 2 || playerAssignedScores.some((score) => score === playerId)) {
+            const currentImage = createImageElement(imageName);
+            currentImage.style.position = "absolute";
+            currentImage.style.top = "0";
+            currentImage.style.left = "0";
+            currentImage.style.width = "100%";
+            currentImage.style.height = initialImage.clientHeight;
+            cardContainer.appendChild(currentImage);
+
+            const cardNameElement = cardNames[index];
+            cardNameElement.textContent = imageName
+              .split(".")[0]
+              .toLowerCase()
+              .replace(/\b\w/g, (char) => char.toUpperCase());
+          } else {
+            const strip = document.createElement("div");
+            strip.style.width = "100%";
+            strip.style.height = `${initialImage.clientHeight * 2}px`;
+            strip.style.position = "absolute";
+            strip.style.top = "0";
+            strip.style.left = "0";
+            strip.style.overflow = "hidden";
+            strip.className = "strip";
+
+            const generalImage = createImageElement("GENERAL.avif");
+            const playerImage = createImageElement(imageName);
+
+            generalImage.style.position = "absolute";
+            generalImage.style.top = "0";
+            generalImage.style.left = "0";
+            generalImage.style.width = "100%";
+            generalImage.style.height = `${initialImage.clientHeight}px`;
+
+            playerImage.style.position = "absolute";
+            playerImage.style.top = `${initialImage.clientHeight}px`;
+            playerImage.style.left = "0";
+            playerImage.style.width = "100%";
+            playerImage.style.height = `${initialImage.clientHeight}px`;
+
+            strip.appendChild(generalImage);
+            strip.appendChild(playerImage);
+            cardContainer.appendChild(strip);
+
+            strip.style.transform = "translateY(0)";
+
+            const cardNameElement = cardNames[index];
+            cardNameElement.classList.add("blurCardName");
+            setTimeout(() => {
+              cardNameElement.textContent = "General";
+              cardNameElement.classList.remove("blurCardName");
+            }, 400);
+          }
+        });
+      }
     });
   }
 
