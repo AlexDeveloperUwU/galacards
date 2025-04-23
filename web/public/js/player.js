@@ -303,9 +303,11 @@ function handleGameData(game) {
             const cardNameElement = cardNames[index];
             cardNameElement.classList.add("blurCardName");
             setTimeout(() => {
-              cardNameElement.textContent = "General";
-              cardNameElement.classList.remove("blurCardName");
-            }, 400);
+              cardNameElement.textContent = imageName
+              .split(".")[0]
+              .toLowerCase()
+              .replace(/\b\w/g, (char) => char.toUpperCase());
+            }, 1000);
           }
         });
       }
