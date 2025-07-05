@@ -58,16 +58,6 @@ router.get("/list", (req, res) => {
   res.render("list", { title: `Listado | ${config.gameName}`, gameTitle: config.gameName });
 });
 
-router.get("/anticheat", (req, res) => {
-  const filePath = path.join(__dirname, "..", "web", "public", "files", "QueSoyAntiCheat.crx");
-  res.download(filePath, "QueSoyAntiCheat.crx", (err) => {
-    if (err) {
-      console.error("Error al descargar el archivo anticheat:", err);
-      res.status(500).send("No se pudo descargar el archivo.");
-    }
-  });
-});
-
 router.get("/sw.js", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "web", "public", "js", "sw.js"));
 });
