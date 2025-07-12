@@ -43,6 +43,10 @@ router.get("/overlay", (req, res) => {
   res.render("overlay", { title: `Overlay | ${config.gameName}`, gameTitle: config.gameName });
 });
 
+router.get("/generic", isHostOrPlayer, (req, res) => {
+  res.render("generic", { title: `Generic | ${config.gameName}`, gameTitle: config.gameName });
+});
+
 router.get("/controller", isHost, (req, res) => {
   res.render("controller", { title: `Control | ${config.gameName}`, gameTitle: config.gameName });
 });

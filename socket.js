@@ -82,6 +82,26 @@ async function registerSocketHandlers(socket, io) {
       })
   );
 
+  socket.on("presentation:reset", async () => {
+    const presentationData = await dbase.resetPresentation();
+    io.emit("presentation:returnReset", presentationData);
+  });
+
+  socket.on("presentation:next", async () => {
+    const presentationData = await dbase.nextPresenter();
+    io.emit("presentation:returnNext", presentationData);
+  });
+
+  socket.on("presentation:all", async () => {
+    await dbase.resetPresentation();
+    io.emit("presentation:returnAll");
+  });
+
+  socket.on("presentation:getStatus", async () => {
+    const presentationData = await dbase.getPresentation();
+    socket.emit("presentation:returnStatus", presentationData);
+  });
+
   socket.on("disconnect", async () => {
     console.log(`Cliente desconectado. Auth ID: ${socket.playerId}`);
     await handleConnection(socket, io, "disconnect");
@@ -93,9 +113,14 @@ async function registerSocketHandlers(socket, io) {
 async function sendGeneralData(socket) {
   var data = await dbase.getDatabase();
   const currentPlayerPosition = await dbase.getCurrentPlayer();
+  const presentationData = await dbase.getPresentation();
   socket.emit("general:returnData", {
     players: data.data.players,
-    game: { ...data.data.game, currentPlayer: currentPlayerPosition },
+    game: {
+      ...data.data.game,
+      currentPlayer: currentPlayerPosition,
+      presentation: presentationData,
+    },
   });
 }
 

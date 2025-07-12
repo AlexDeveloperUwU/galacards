@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('components/head') %>
+
+<link rel="stylesheet" href="/public/css/vid.css">
+
+<style>
+  .text-shadow {
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  }
+
+  .presentation-buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .presentation-button {
+    background-color: #805ad5;
+    color: white;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+
+  .presentation-button:hover {
+    background-color: #6b46c1;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .player-blurred {
+    filter: blur(8px);
+    opacity: 0.4;
+    transform: scale(1) !important;
+    transition: filter 0.5s ease-out, opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.5s ease-out;
+    box-shadow: none !important;
+  }
+
+  .player-focused {
+    filter: blur(0);
+    opacity: 1;
+    transform: scale(1.03) !important;
+    transition: filter 0.5s ease-out, opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.5s ease-out;
+    box-shadow: 0 0 25px rgba(128, 90, 213, 0.6) !important;
+  }
+
+  .shadow-glow.player-blurred {
+    box-shadow: none !important;
+  }
+
+  .scale-\[1\.04\].player-blurred {
+    transform: scale(1) !important;
+  }
+
+  .player-name {
+    margin-top: 1.5rem !important;
+  }
+</style>
+
+<body class="min-h-screen p-6 md:p-8 flex flex-col items-center justify-center">
+  <video id="background-video" autoplay muted loop playbackRate="0.5">
+    <source src="/public/vids/bg.webm" type="video/webm">
+    Tu navegador no soporta el elemento de video.
+  </video>
+
+  <h1 class="text-5xl md:text-6xl text-white font-bold mb-10 animate-glow tracking-wider"><%= gameTitle %></h1>
+
+  <div id="pointsContainer" style="display: none;"></div>
+
+  <div class="w-full max-w-[90%] mx-auto rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm bg-purple-bg/40">
+    <div class="grid grid-cols-1 sm:grid-cols-5 gap-4 md:gap-6 p-6 md:p-8">
+
+      <div class="w-full flex flex-col items-center">
+        <div class="w-full h-0 pb-[133.33%] relative">
+          <iframe class="absolute inset-0 w-full h-full rounded-2xl border-2 border-purple-light shadow-card transition-all duration-300 transform pointer-events-none" style="background-color: transparent;" src="" id="player1iframe"></iframe>
+        </div>
+        <span id="playerName1" class="text-white text-xl md:text-2xl font-bold animate-glow mt-6 text-shadow player-name">Jugador 1</span>
+      </div>
+
+      <div class="w-full flex flex-col items-center">
+        <div class="w-full h-0 pb-[133.33%] relative">
+          <iframe class="absolute inset-0 w-full h-full rounded-2xl border-2 border-purple-light shadow-card transition-all duration-300 transform pointer-events-none" style="background-color: transparent;" src="" id="player2iframe"></iframe>
+        </div>
+        <span id="playerName2" class="text-white text-xl md:text-2xl font-bold animate-glow mt-6 text-shadow player-name">Jugador 2</span>
+      </div>
+
+      <div class="w-full flex flex-col items-center">
+        <div class="w-full h-0 pb-[133.33%] relative">
+          <iframe class="absolute inset-0 w-full h-full rounded-2xl border-2 border-purple-light shadow-card transition-all duration-300 transform pointer-events-none" style="background-color: transparent;" src="" id="player3iframe"></iframe>
+        </div>
+        <span id="playerName3" class="text-white text-xl md:text-2xl font-bold animate-glow mt-6 text-shadow player-name">Jugador 3</span>
+      </div>
+
+      <div class="w-full flex flex-col items-center">
+        <div class="w-full h-0 pb-[133.33%] relative">
+          <iframe class="absolute inset-0 w-full h-full rounded-2xl border-2 border-purple-light shadow-card transition-all duration-300 transform pointer-events-none" style="background-color: transparent;" src="" id="player4iframe"></iframe>
+        </div>
+        <span id="playerName4" class="text-white text-xl md:text-2xl font-bold animate-glow mt-6 text-shadow player-name">Jugador 4</span>
+      </div>
+
+      <div class="w-full flex flex-col items-center">
+        <div class="w-full h-0 pb-[133.33%] relative">
+          <iframe class="absolute inset-0 w-full h-full rounded-2xl border-2 border-purple-light shadow-card transition-all duration-300 transform pointer-events-none" style="background-color: transparent;" src="" id="hostIframe"></iframe>
+        </div>
+        <span id="hostName" class="text-white text-xl md:text-2xl font-bold animate-glow mt-6 text-shadow player-name">Host</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="presentation-buttons" id="presentationButtonsContainer" style="display: none;">
+    <button id="resetPresentationButton" class="presentation-button">
+      Reiniciar Presentación
+    </button>
+    <button id="nextPresentationButton" class="presentation-button">
+      Siguiente Presentador
+    </button>
+  </div>
+
+  <script src="/public/js/generic.js"></script>
+
+  <%- include('components/scripts') %>
+</body>
+
+</html>

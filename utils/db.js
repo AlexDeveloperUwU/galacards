@@ -26,6 +26,11 @@ const defaultData = {
     totalRounds: 0,
     currentRound: 0,
     currentPlayer: null,
+    presentation: {
+      active: false,
+      currentPresenter: null,
+      stage: 0, // 0: todos visibles, 1-4: jugador específico + host
+    },
   },
 };
 let db;
@@ -269,4 +274,64 @@ export async function setCurrentPlayer() {
   }
 
   await db.write();
+}
+
+////////////////////////////////////////////////////
+//
+// Sección de gestión de las presentaciones
+//
+///////////////////////////////////////////////////
+
+export async function resetPresentation() {
+  console.log("Reiniciando presentación en el servidor");
+  if (!db.data.game.presentation) {
+    db.data.game.presentation = {};
+  }
+  
+  db.data.game.presentation.active = false;
+  db.data.game.presentation.currentPresenter = null;
+  db.data.game.presentation.stage = 0;
+  
+  await db.write();
+  console.log("Presentación reiniciada: ", db.data.game.presentation);
+  return db.data.game.presentation;
+}
+
+export async function getPresentation() {
+  if (!db.data.game.presentation) {
+    db.data.game.presentation = { active: false, currentPresenter: null, stage: 0 };
+  } else if (db.data.game.presentation.stage === undefined) {
+    db.data.game.presentation.stage = 0;
+  }
+
+  return db.data.game.presentation;
+}
+
+export async function nextPresenter() {
+  if (!db.data.game.presentation) {
+    db.data.game.presentation = {
+      active: false,
+      currentPresenter: null,
+      stage: 0,
+    };
+  }
+
+  db.data.game.presentation.stage = (db.data.game.presentation.stage + 1) % 5;
+
+  if (db.data.game.presentation.stage === 0) {
+    db.data.game.presentation.active = false;
+    db.data.game.presentation.currentPresenter = null;
+  } else {
+    db.data.game.presentation.active = true;
+
+    const playerIndex = db.data.game.presentation.stage - 1;
+    if (playerIndex >= 0 && playerIndex < 4) {
+      db.data.game.presentation.currentPresenter = db.data.players[playerIndex + 1]?.id || null;
+    } else {
+      db.data.game.presentation.currentPresenter = null;
+    }
+  }
+
+  await db.write();
+  return db.data.game.presentation;
 }
